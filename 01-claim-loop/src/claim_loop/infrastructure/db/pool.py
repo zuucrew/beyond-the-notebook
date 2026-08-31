@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from ...config import DATABASE_URL
+from ...config import DATABASE_URL, DB_POOL_MAX, DB_POOL_MIN
 
 _pool: ConnectionPool | None = None
 
@@ -17,12 +17,13 @@ _pool: ConnectionPool | None = None
 def get_pool() -> ConnectionPool:
     global _pool
     if _pool is None:
-        # max_size is the number to remember. On Cloud Run this multiplies by
-        # the instance count and must stay under Cloud SQL's max_connections.
+        # Sized from config, not hardcoded: on Cloud Run this multiplies by the
+        # instance count and must stay under Cloud SQL's max_connections.
+        # See config.DB_POOL_MAX for the arithmetic.
         _pool = ConnectionPool(
             DATABASE_URL,
-            min_size=1,
-            max_size=5,
+            min_size=DB_POOL_MIN,
+            max_size=DB_POOL_MAX,
             kwargs={"row_factory": dict_row},
         )
         _pool.wait(timeout=10)

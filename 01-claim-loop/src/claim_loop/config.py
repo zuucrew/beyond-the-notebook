@@ -42,3 +42,20 @@ LEASE_SECONDS = int(os.environ.get("LEASE_SECONDS", "900"))
 # After this many attempts a claim goes to extraction_failed rather than being
 # retried forever. This is what stops a poison document looping.
 MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "3"))
+
+# Connection pool size, per process.
+#
+# This is the number that breaks a serverless deployment. Cloud Run runs N
+# instances, each holding its own pool, and Cloud SQL enforces a hard
+# max_connections tied to instance size -- roughly 25-50 on the smallest tiers:
+#
+#     instances x DB_POOL_MAX  <=  max_connections
+#
+# Twenty instances at 5 is a hundred connections against a limit of fifty, and
+# the app fails from traffic rather than from a bug. On serverless the usual
+# answer is 1 or 2, because an instance serves one request at a time anyway.
+#
+# Configuration, not code, so local and production differ without a rebuild --
+# and so the arithmetic sits somewhere you can see it.
+DB_POOL_MIN = int(os.environ.get("DB_POOL_MIN", "1"))
+DB_POOL_MAX = int(os.environ.get("DB_POOL_MAX", "5"))

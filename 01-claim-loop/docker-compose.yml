@@ -41,6 +41,8 @@ services:
       CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.80}
       LEASE_SECONDS: ${LEASE_SECONDS:-900}
       MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
+      DB_POOL_MIN: ${DB_POOL_MIN:-1}
+      DB_POOL_MAX: ${DB_POOL_MAX:-5}
       # Read from .env by compose interpolation. Not baked into the image.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     volumes:
