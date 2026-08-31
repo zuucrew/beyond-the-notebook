@@ -373,14 +373,10 @@ Each is excluded for a reason recorded in `docs/DECISIONS.md`, not by oversight.
 
 ## Running it
 
-**Config** — `.env`, gitignored, never committed:
+Every command lives in **[docs/RUN.md](docs/RUN.md)** — local, the experiments,
+and the full GCP deploy and teardown.
 
-```
-GROQ_API_KEY=...
-DATABASE_URL=postgresql://claim:claim@localhost:5432/claimloop
-```
-
-### With Docker (increment 8)
+The short version:
 
 ```bash
 docker compose up -d db
@@ -395,44 +391,23 @@ docker compose run --rm app submit
 ```
 
 ```bash
-docker compose up app
-```
-
-Three workers racing on the same queue — this is the `SKIP LOCKED` proof:
-
-```bash
-docker compose up --scale app=3 app
-```
-
-A psql shell:
-
-```bash
-docker compose exec db psql -U claim -d claimloop
-```
-
-### Without Docker
-
-Postgres natively, if you would rather see the database directly:
-
-```bash
-brew install postgresql@16 && brew services start postgresql@16 && createdb claimloop
-```
-
-**Install:**
-
-```bash
-uv add "psycopg[binary,pool]" typer rich
+docker compose run --rm app work --once
 ```
 
 ```bash
-uv add --dev pytest "testcontainers[postgres]"
+docker compose run --rm app review
 ```
 
-**Open a psql shell:**
+**Config** — `.env`, gitignored, never committed. See `.env.example`:
 
-```bash
-docker exec -it claim-loop-db psql -U claim -d claimloop
-```
+| Variable | Default | What it does |
+|---|---|---|
+| `DATABASE_URL` | `postgresql:///claimloop` | Postgres connection |
+| `CONFIDENCE_THRESHOLD` | `0.80` | Below this, a field goes to a human |
+| `LEASE_SECONDS` | `900` | How long a worker or reviewer holds a claim |
+| `MAX_ATTEMPTS` | `3` | Attempts before `extraction_failed` |
+| `DB_POOL_MAX` | `5` | Pool size per process — see the deploy note below |
+| `GROQ_API_KEY` | — | Increment 5 onward |
 
 ---
 
@@ -470,7 +445,14 @@ This is nearly impossible to feel locally, where you only ever run one process.
 
 **Database:** Cloud SQL for PostgreSQL 16 — the same version as
 `docker-compose.yml`, so nothing in `migrations/` or `src/` changes. Only
-`DATABASE_URL` does.
+`DATABASE_URL` does, and through the Cloud SQL connector it is a unix socket
+rather than a host and port:
+
+```
+postgresql://claim:PASSWORD@/claimloop?host=/cloudsql/PROJECT:REGION:INSTANCE
+```
+
+It comes from Secret Manager, never from a file. Commands in `docs/RUN.md`.
 
 **Cost shape:** compute scales to zero and rounds to nothing at this volume.
 **Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
@@ -523,7 +505,8 @@ sit unused until increment 5. If you open a PDF library this week, that's drift.
 ├── docs/
 │   ├── DECISIONS.md   considered, chosen, why, and what changed my mind
 │   ├── LIMITS.md      what breaks at scale, and what I'd do about it
-│   └── ESTIMATE.md    what it costs to build — money and evenings
+│   ├── ESTIMATE.md    what it costs to build — money and evenings
+│   └── RUN.md         every command: local, experiments, GCP
 ├── dataset/           18 synthetic claim PDFs + ground-truth JSON
 ├── migrations/        numbered .sql, applied in order
 └── src/claim_loop/
