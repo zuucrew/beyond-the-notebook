@@ -81,12 +81,12 @@ thought through.
 stateDiagram-v2
     [*] --> submitted
     submitted --> extracting: worker claims it
-    extracting --> extracted: model returns fields
-    extracting --> extraction_failed: retries exhausted
 
-    extracted --> auto_approved: every field above threshold
-    extracted --> pending_review: any field below threshold
-    extracted --> incomplete: mandatory field blank on form
+    extracting --> auto_approved: every field above threshold
+    extracting --> pending_review: any field below threshold
+    extracting --> incomplete: mandatory field blank on form
+    extracting --> submitted: lease expired — worker crashed
+    extracting --> extraction_failed: attempts exhausted
 
     pending_review --> in_review: reviewer claims it
     in_review --> pending_review: lease expired
@@ -100,6 +100,20 @@ stateDiagram-v2
     incomplete --> [*]
     extraction_failed --> [*]
 ```
+
+**Check it against the invariant:** every non-terminal state must have a process
+that acts on it. `submitted` → the worker. `pending_review` → the reviewer.
+`extracting` and `in_review` → the reaper, via lease expiry. Nothing strands.
+
+That invariant is why there is **no `extracted` state**. Extraction and routing
+happen in the same transaction — routing is a pure function of the extraction
+result, so persisting a claim between the two would create a state nothing
+queries, and claims would fall into it and die silently.
+
+`extracting → submitted` is the machine equivalent of a reviewer walking away.
+A worker that crashes mid-call abandons its claim exactly like a human does; it
+just does it by dying instead of going to lunch. Same lease column, same reaper,
+second `WHERE` clause.
 
 `in_review → pending_review` is at-least-once delivery. A reviewer whose lease
 expires mid-edit has their claim handed to someone else, which means two people
@@ -123,8 +137,9 @@ erDiagram
         text form_version
         text storage_uri
         text status
+        int attempt_count
         timestamptz lease_expires_at
-        text reviewer_id
+        text locked_by
         jsonb extracted
         timestamptz created_at
         timestamptz updated_at
@@ -145,7 +160,7 @@ erDiagram
 ### Why this shape
 
 **Typed columns for what the queue needs.** `status`, `lease_expires_at`,
-`reviewer_id` and the timestamps never vary between clients and are queried on
+`locked_by` and the timestamps never vary between clients and are queried on
 every claim operation, so they are real indexed columns.
 
 **`JSONB` for what varies.** A claim's extracted fields:
@@ -180,7 +195,52 @@ model is wrong.
 | `claims (lease_expires_at) WHERE status = 'in_review'` | The reaper's scan |
 | `field_events (claim_id)` | Loading one claim's history |
 | `claims (storage_uri)` unique | Idempotent submit — same file, one claim |
+
+`locked_by` holds whoever currently owns the lease — a worker id during
+`extracting`, a reviewer id during `in_review`. Who *completed* a review is
+recorded in `field_events.actor`, which is permanent; `locked_by` is transient.
 | GIN on `claims (extracted)` | Only when a real containment query needs it |
+
+---
+
+## Document storage
+
+The PDF bytes do not live in Postgres. `claims.storage_uri` is a **reference**:
+
+```
+file://dataset/metlife-tpd_aisha-rahman_gaps.pdf     local
+gs://claim-loop-docs/<sha256>.pdf                    deployed
+```
+
+One column, two schemes, so moving to the cloud is a config change rather than a
+migration.
+
+**Why not `bytea` in Postgres:** managed Postgres storage costs roughly 10x object
+storage per GB, it is the thing you back up, every scan drags payload you did not
+ask for, and there are no signed URLs for a reviewer to view the document.
+
+> **Databases store references to blobs, not blobs.**
+
+**Objects are named by content hash.** Uploading the same file twice produces the
+same object, so dedup and upload-retry are free — and a unique index on
+`storage_uri` turns that into idempotent submit (increment 9).
+
+**Order matters, because there is no transaction across two systems.** Uploading
+to object storage and inserting the claim row cannot be atomic:
+
+- Upload succeeds, `INSERT` fails → an orphaned object nobody references
+- `INSERT` succeeds, upload fails → a claim pointing at a file that does not exist
+
+So: **upload first, insert second.** An orphan costs fractions of a cent and can be
+swept later; a row pointing at nothing is a broken claim.
+
+> When you cannot have atomicity, order the writes so the failure mode is the
+> harmless one.
+
+**The one hole this leaves:** if the process dies between upload and insert *and*
+the client never retries, there is an object with no claim and nothing in the
+system knows a submission was attempted. A periodic reconciliation sweep —
+objects with no matching row — is the only way to close it. See `LIMITS.md`.
 
 ---
 
@@ -200,7 +260,7 @@ BEGIN;
 
   UPDATE claims
   SET status = 'in_review',
-      reviewer_id = $1,
+      locked_by = $1,
       lease_expires_at = now() + interval '15 minutes'
   WHERE id = $2;
 COMMIT;
@@ -231,6 +291,66 @@ Two `psql` sessions, five minutes, before writing any application code:
 
 ---
 
+## The worker loop
+
+```
+loop:
+    claim = claim_one()        # transaction: SELECT..SKIP LOCKED + UPDATE   ~1ms
+    if not claim: wait; continue
+
+    result = extract(claim)    # NO transaction held. 30 seconds. The slow part.
+
+    complete(claim, result)    # transaction: write result + set status      ~1ms
+```
+
+> **Short transaction, long work, short transaction.** Never hold a transaction
+> open across the slow part.
+
+Wrapping the whole body in one transaction would hold a row lock for 30 seconds,
+block `VACUUM` from reclaiming dead tuples, and turn a healthy queue into bloat.
+This is the most common way database-as-queue goes wrong.
+
+**Waiting for work.** Polling (`sleep(1)`, ask again) is simple and correct.
+`LISTEN` / `NOTIFY` gives near-zero latency with no empty queries — but `NOTIFY`
+is *not durable*, so a worker that is down when it fires misses that wakeup
+forever. Keep a slow poll as a backstop regardless.
+
+**Scaling.** Start more processes. No partition assignment, no consumer-group
+rebalancing, no coordinator — `SKIP LOCKED` means five workers hitting the same
+query get five different rows.
+
+---
+
+## Operating it
+
+**Where is everything?**
+
+```sql
+SELECT status, count(*) FROM claims GROUP BY status;
+```
+
+**What is stuck?** This is the safety net — anything non-terminal that has not
+moved in an hour:
+
+```sql
+SELECT id, status, updated_at FROM claims
+WHERE status NOT IN ('approved','rejected','incomplete','extraction_failed','auto_approved')
+  AND updated_at < now() - interval '1 hour';
+```
+
+`submitted` piling up means no workers are running. `extracting` piling up means
+the reaper is not running. The states name the broken component.
+
+**The metric that matters** is not queue depth — it is the age of the oldest
+unprocessed item. Depth can look healthy while one claim sits at the head forever.
+
+```sql
+SELECT status, now() - min(created_at) AS oldest
+FROM claims WHERE status = 'submitted' GROUP BY status;
+```
+
+---
+
 ## Stack
 
 | Layer | Choice |
@@ -244,7 +364,7 @@ Two `psql` sessions, five minutes, before writing any application code:
 | Tests | `pytest` + `testcontainers[postgres]` |
 | Extraction (inc. 5) | `openai` SDK against Groq — OpenAI-compatible, Qwen VL |
 | Tracing (inc. 6) | `langfuse`, Cloud free tier |
-| Deploy (inc. 10) | Cloud Run + Cloud SQL + Secret Manager |
+| Deploy (inc. 10) | Cloud Run + Cloud SQL + GCS + Secret Manager |
 
 **Not used:** Redis · Celery/RQ · any ORM · Alembic · Kafka · Kubernetes · CI.
 Each is excluded for a reason recorded in `DECISIONS.md`, not by oversight.
@@ -284,6 +404,44 @@ docker exec -it claim-loop-db psql -U claim -d claimloop
 
 ---
 
+## Deploying (increment 10)
+
+**Two different Cloud Run shapes, and you need both:**
+
+| Component | Runs as | Why |
+|---|---|---|
+| `submit` API | Cloud Run **Service** | HTTP-triggered, scales 0→N on requests |
+| Extraction worker | Cloud Run **Job** + Cloud Scheduler | A Service throttles CPU between requests, so a `while True` loop starves |
+| Reaper | Cloud Run **Job** + Cloud Scheduler | Same |
+
+The worker becomes a scheduled drain: start, process until the queue is empty,
+exit. The same loop as local, with `break` instead of `sleep` when there is no
+work. **Overlapping runs are safe** — `SKIP LOCKED` means a second run takes
+different claims, exactly as a second worker would.
+
+**The failure that will actually bite you — connection exhaustion.**
+
+```
+instances x pool_size  >  max_connections   ->  everything breaks
+```
+
+Cloud Run scales to N instances, each holding a pool. Cloud SQL has a hard
+`max_connections` tied to instance size. 20 instances x 10 connections = 200,
+against a small instance's ~100. **The app dies from success** — traffic goes up
+and it falls over.
+
+Fixes, in order of preference: cap `--max-instances` so the arithmetic cannot
+exceed the limit; set a tiny `pool_size` (1 or 2 is normal on serverless); or put
+a pooler (PgBouncer, or Cloud SQL's built-in) in front.
+
+This is nearly impossible to feel locally, where you only ever run one process.
+
+**Cost shape:** compute scales to zero and rounds to nothing at this volume.
+**Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
+meter always running. See `ESTIMATE.md`.
+
+---
+
 ## Build plan
 
 Each increment adds exactly **one** concept, so every commit has a lesson
@@ -301,7 +459,7 @@ attached. Commits are never squashed.
 | 7 | Queue depth, agreement rate, review latency | operational observability |
 | 8 | Dockerfile + compose | **L2** — containers, layers, multi-stage |
 | 9 | Idempotent submit — same file twice is one claim | idempotency |
-| 10 | Deploy to Cloud Run + Cloud SQL | connection pooling, cost modelling |
+| 10 | Deploy — Service + Jobs, GCS, Cloud SQL | connection pooling, cost modelling |
 
 ### The v0.1 stub
 

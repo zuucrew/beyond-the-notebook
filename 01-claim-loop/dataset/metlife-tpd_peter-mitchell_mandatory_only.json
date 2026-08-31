@@ -1,0 +1,30 @@
+{
+  "file": "metlife-tpd_peter-mitchell_mandatory_only.pdf",
+  "persona": "peter-mitchell",
+  "variant": "mandatory_only",
+  "deliberately_missing": [],
+  "fields": {
+    "member_number": "MP-7284915",
+    "given_names": "Peter James",
+    "surname": "Mitchell",
+    "date_of_birth": "09/04/1968",
+    "address_street": "14 Banksia Crescent",
+    "address_suburb": "Engadine",
+    "address_state": "NSW",
+    "address_postcode": "2233",
+    "diagnosis": "Chronic lumbar radiculopathy L4/L5",
+    "date_of_disability": "12/05/2025",
+    "date_last_worked": "09/05/2025",
+    "signature_date": "01/07/2025",
+    "contact_phone": "0412 884 291",
+    "title": null,
+    "previous_names": null,
+    "gender": null,
+    "email": null,
+    "date_symptoms_commenced": null,
+    "date_first_consulted": null,
+    "accident_related": null,
+    "doctor_name": null,
+    "doctor_specialty": null
+  }
+}

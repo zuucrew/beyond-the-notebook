@@ -1,0 +1,30 @@
+{
+  "file": "metlife-tpd_stefan-kovac_mandatory_only.pdf",
+  "persona": "stefan-kovac",
+  "variant": "mandatory_only",
+  "deliberately_missing": [],
+  "fields": {
+    "member_number": "MP-1149763",
+    "given_names": "Stefan",
+    "surname": "Kovac",
+    "date_of_birth": "26/08/1959",
+    "address_street": "112 Seaview Terrace",
+    "address_suburb": "Glenelg North",
+    "address_state": "SA",
+    "address_postcode": "5045",
+    "diagnosis": "Cervical spondylotic myelopathy",
+    "date_of_disability": "30/04/2025",
+    "date_last_worked": "28/04/2025",
+    "signature_date": "10/07/2025",
+    "contact_phone": "0409 335 671",
+    "title": null,
+    "previous_names": null,
+    "gender": null,
+    "email": null,
+    "date_symptoms_commenced": null,
+    "date_first_consulted": null,
+    "accident_related": null,
+    "doctor_name": null,
+    "doctor_specialty": null
+  }
+}

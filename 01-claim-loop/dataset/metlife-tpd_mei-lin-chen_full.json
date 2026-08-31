@@ -1,0 +1,30 @@
+{
+  "file": "metlife-tpd_mei-lin-chen_full.pdf",
+  "persona": "mei-lin-chen",
+  "variant": "full",
+  "deliberately_missing": [],
+  "fields": {
+    "member_number": "MP-3317840",
+    "given_names": "Mei Lin",
+    "surname": "Chen",
+    "date_of_birth": "17/07/1974",
+    "address_street": "23 Waratah Avenue",
+    "address_suburb": "Glen Waverley",
+    "address_state": "VIC",
+    "address_postcode": "3150",
+    "diagnosis": "Rheumatoid arthritis, seropositive",
+    "date_of_disability": "07/04/2025",
+    "date_last_worked": "04/04/2025",
+    "signature_date": "30/06/2025",
+    "contact_phone": "0422 640 187",
+    "title": "Mrs",
+    "previous_names": "Mei Lin Wong",
+    "gender": "Female",
+    "email": "meilin.chen74@yahoo.com",
+    "date_symptoms_commenced": "12/01/2024",
+    "date_first_consulted": "29/01/2024",
+    "accident_related": "No",
+    "doctor_name": "Dr Alan Kostas",
+    "doctor_specialty": "Rheumatologist"
+  }
+}

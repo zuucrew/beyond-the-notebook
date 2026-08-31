@@ -1,0 +1,32 @@
+{
+  "file": "metlife-tpd_mei-lin-chen_gaps.pdf",
+  "persona": "mei-lin-chen",
+  "variant": "gaps",
+  "deliberately_missing": [
+    "date_of_disability"
+  ],
+  "fields": {
+    "member_number": "MP-3317840",
+    "given_names": "Mei Lin",
+    "surname": "Chen",
+    "date_of_birth": "17/07/1974",
+    "address_street": "23 Waratah Avenue",
+    "address_suburb": "Glen Waverley",
+    "address_state": "VIC",
+    "address_postcode": "3150",
+    "diagnosis": "Rheumatoid arthritis, seropositive",
+    "date_of_disability": null,
+    "date_last_worked": "04/04/2025",
+    "signature_date": "30/06/2025",
+    "contact_phone": "0422 640 187",
+    "title": null,
+    "previous_names": null,
+    "gender": null,
+    "email": null,
+    "date_symptoms_commenced": null,
+    "date_first_consulted": null,
+    "accident_related": null,
+    "doctor_name": null,
+    "doctor_specialty": null
+  }
+}
