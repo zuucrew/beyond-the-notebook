@@ -26,7 +26,8 @@ with architecture and schema diagrams.
 | **[NN-name](NN-name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
 -->
 
-Ideas considered but not started are in [IDEAS.md](IDEAS.md).
+The full project roadmap is in [docs/ROADMAP.md](docs/ROADMAP.md); earlier
+sketches are in [docs/IDEAS.md](docs/IDEAS.md).
 
 ---
 
@@ -95,15 +96,19 @@ projects teaching the same three things.
 | File | What's in it |
 |---|---|
 | `README.md` | What it does, how to run it, architecture and schema diagrams |
-| `DECISIONS.md` | Options considered, what was chosen, why, and what changed my mind |
-| `LIMITS.md` | What breaks at scale, and what I'd do about it |
+| `docs/DECISIONS.md` | Options considered, what was chosen, why, and what changed my mind |
+| `docs/LIMITS.md` | What breaks at scale, and what I'd do about it |
+| `docs/ESTIMATE.md` | What it costs to build — money and evenings |
 | `src/` | The code |
+
+The README stays at the project root as the entry point; everything else lives
+in `docs/`.
 
 Plus `Dockerfile` at L2, `.github/workflows/` at L3, `k8s/` at L4.
 
-`DECISIONS.md` is started **before** any code and updated whenever I change my
+`docs/DECISIONS.md` is started **before** any code and updated whenever I change my
 mind — the changed-my-mind entries are the most useful thing in the repo.
-`LIMITS.md` exists even for projects that only run locally, because reasoning
+`docs/LIMITS.md` exists even for projects that only run locally, because reasoning
 about what breaks is free and doesn't require deploying anything.
 
 ## Depth levels
