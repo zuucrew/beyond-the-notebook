@@ -14,15 +14,16 @@ is the excuse to write them down.**
 
 ## Projects
 
-Listed in build order. Each links to its own README with architecture and
-schema diagrams.
+Numbered in **build order** — the number is when it was built, not a required
+sequence or a difficulty ranking. Start anywhere. Each links to its own README
+with architecture and schema diagrams.
 
 | Project | What it is | Teaches | Level | Status |
 |---|---|---|---|---|
-| **[claim-loop](claim-loop/)** | Claims get OCR'd, low-confidence fields go to a human reviewer, corrections are kept as signal | queues · task claiming · leases · append-only audit | L2 + deployed | 🔨 building |
+| **[01-claim-loop](01-claim-loop/)** | Claims get OCR'd, low-confidence fields go to a human reviewer, corrections are kept as signal | queues · task claiming · leases · append-only audit | L2 + deployed | 🔨 building |
 
 <!-- Template for the next row — keep it to one line per cell:
-| **[name](name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
+| **[NN-name](NN-name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
 -->
 
 ---
@@ -36,7 +37,7 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| HTTP APIs, status codes, idempotency | 🔨 claim-loop |
+| HTTP APIs, status codes, idempotency | 🔨 01-claim-loop |
 | Streaming — SSE, WebSockets | ⬜ |
 | Auth — API keys, JWT, OAuth | ⬜ |
 
@@ -52,16 +53,16 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Async queues, producer/consumer | 🔨 claim-loop |
-| At-least-once vs exactly-once delivery | 🔨 claim-loop |
+| Async queues, producer/consumer | 🔨 01-claim-loop |
+| At-least-once vs exactly-once delivery | 🔨 01-claim-loop |
 
 **Data**
 
 | Concept | Covered by |
 |---|---|
-| Storage choice — SQL vs KV vs object vs vector | 🔨 claim-loop |
-| Schema design, indexes, query plans | 🔨 claim-loop |
-| Migrations, transactions, connection pooling | 🔨 claim-loop |
+| Storage choice — SQL vs KV vs object vs vector | 🔨 01-claim-loop |
+| Schema design, indexes, query plans | 🔨 01-claim-loop |
+| Migrations, transactions, connection pooling | 🔨 01-claim-loop |
 | N+1 queries and how to spot them | ⬜ |
 | Caching, TTLs, invalidation | ⬜ |
 
@@ -69,7 +70,7 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Containers, layers, multi-stage builds | 🔨 claim-loop |
+| Containers, layers, multi-stage builds | 🔨 01-claim-loop |
 | CI — automated tests on push | ⬜ |
 | CD — automated deploy on merge | ⬜ |
 | Kubernetes — Deployments, Services, probes | ⬜ |
@@ -79,9 +80,9 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Observability — logs, metrics, traces | 🔨 claim-loop |
+| Observability — logs, metrics, traces | 🔨 01-claim-loop |
 | Secrets and security boundaries | ⬜ |
-| Cost modelling | 🔨 claim-loop |
+| Cost modelling | 🔨 01-claim-loop |
 
 ✅ done · 🔨 building · ⬜ not covered yet
 
@@ -121,8 +122,11 @@ common shape.
 
 ## Conventions
 
-- Each project is developed on a branch named after it, merged to `main` when it
-  reaches its declared depth. Root-level files are edited on `main` directly.
+- Project folders are numbered in build order — `01-claim-loop`, `02-...`.
+  Numbers are assigned once and never reshuffled, so links stay valid.
+- Each project is developed on a branch named after it (without the number),
+  merged to `main` when it reaches its declared depth. Root-level files are
+  edited on `main` directly.
 - Increment commits are **never squashed**. Each commit adds exactly one concept,
   so the commit history is the lesson log.
 - Diagrams are Mermaid in fenced code blocks — text, so they diff in review and
