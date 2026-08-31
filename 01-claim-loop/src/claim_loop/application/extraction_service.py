@@ -11,7 +11,7 @@ import time
 
 from ..domain.routing import route
 from ..infrastructure.db import claims_repository as repo
-from ..infrastructure.llm_providers.stub import extract
+from ..infrastructure.llm_providers import get_extractor
 
 
 def process_one(worker_id: str) -> dict | None:
@@ -21,9 +21,10 @@ def process_one(worker_id: str) -> dict | None:
         return None
 
     try:
-        # No transaction held here. This is the slow part -- a stub today,
-        # a 30-second vision model call once the stub is replaced.
-        extracted = extract(claim["storage_uri"])
+        # No transaction held here. This is the slow part: rendering pages and
+        # a vision model call, tens of seconds. Holding a transaction across it
+        # would keep a row lock open that whole time.
+        extracted = get_extractor()(claim["storage_uri"])
         status, reasons = route(extracted)
     except Exception as exc:
         outcome = repo.fail_extraction(claim["id"], claim["attempt_count"])

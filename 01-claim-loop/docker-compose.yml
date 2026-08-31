@@ -44,7 +44,12 @@ services:
       DB_POOL_MIN: ${DB_POOL_MIN:-1}
       DB_POOL_MAX: ${DB_POOL_MAX:-5}
       # Read from .env by compose interpolation. Not baked into the image.
+      EXTRACTOR: ${EXTRACTOR:-groq}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+      GROQ_MODEL: ${GROQ_MODEL:-qwen2.5-vl-72b-instruct}
+      PDF_DPI: ${PDF_DPI:-150}
+      MAX_PAGES: ${MAX_PAGES:-8}
     volumes:
       - ./dataset:/app/dataset:ro
     command: ["work"]

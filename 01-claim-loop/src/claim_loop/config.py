@@ -59,3 +59,30 @@ MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "3"))
 # and so the arithmetic sits somewhere you can see it.
 DB_POOL_MIN = int(os.environ.get("DB_POOL_MIN", "1"))
 DB_POOL_MAX = int(os.environ.get("DB_POOL_MAX", "5"))
+
+# ---------------------------------------------------------------------------
+# extraction
+# ---------------------------------------------------------------------------
+
+# Which extractor the worker uses: "stub" reads the ground-truth JSON beside
+# each PDF and corrupts it deterministically; "groq" actually reads the pages.
+EXTRACTOR = os.environ.get("EXTRACTOR", "groq")
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# Groq speaks the OpenAI wire format, so the openai SDK works against it
+# unchanged -- only base_url differs. Point this at OpenRouter or anywhere else
+# OpenAI-compatible and nothing in the code changes.
+GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+
+# Verify against Groq's current catalogue before trusting this default -- model
+# ids move, and vision-capable models are a smaller list than text ones.
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen2.5-vl-72b-instruct")
+
+# Rasterisation resolution. Higher reads small print better and costs more
+# image tokens; image tokens scale with pixel area, so 200 is roughly twice
+# the cost of 140. Measure before raising it.
+PDF_DPI = int(os.environ.get("PDF_DPI", "150"))
+
+# Cap pages per document. A 40-page pack at 150 DPI is a lot of image tokens.
+MAX_PAGES = int(os.environ.get("MAX_PAGES", "8"))
