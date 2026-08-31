@@ -140,7 +140,7 @@ half-fail. The full argument is DECISIONS.md D-001.
 ## Repo layout
 
 ```
-claim-loop/
+01-claim-loop/
 ├── README.md       what it does, how to run it, the architecture
 ├── DECISIONS.md    what I considered, what I chose, why, what I'd change
 ├── LIMITS.md       what breaks at scale, and what I'd do about it
