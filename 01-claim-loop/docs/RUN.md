@@ -171,7 +171,7 @@ A test that cannot fail against the broken version is not testing anything.
 
 ## GCP — one-time setup
 
-Increment 10. Scoped as a one-week run and then deleted; see `ESTIMATE.md`.
+Scoped as a one-week run and then deleted; see `ESTIMATE.md`.
 
 ```bash
 export PROJECT=your-project-id REGION=australia-southeast1 INSTANCE=claim-loop-db
@@ -283,7 +283,7 @@ gcloud run jobs execute claim-loop-worker --region=$REGION --wait
 ```
 
 Prove the connection limit is real — raise `--max-instances` and push load until
-it breaks. That failure is the entire reason this increment exists.
+it breaks. That failure is the entire reason for deploying at all.
 
 ---
 

@@ -10,7 +10,7 @@ real budget.
 
 ## Money
 
-### Increments 0–4 — the core of the project
+### Building the queue, locally
 
 **$0.** Postgres runs in Docker on the laptop. The extractor is a stub that reads
 the ground-truth JSON in `dataset/`. No API calls, no cloud, nothing metered.
@@ -18,7 +18,7 @@ the ground-truth JSON in `dataset/`. No API calls, no cloud, nothing metered.
 This is most of the learning — schema, state machine, `SKIP LOCKED`, leases — and
 it costs nothing at all.
 
-### Increment 5 — real extraction
+### Adding a real extraction model
 
 The dataset is 18 documents at roughly 5 pages each; a full run is on the order
 of ~135k input tokens. Open models on Groq are cheap enough that a full pass
@@ -29,12 +29,12 @@ costs cents, and development means running it dozens of times, not thousands.
 Verify current rates before relying on this — provider pricing moves, and these
 are estimates rather than quotes.
 
-### Increments 6–9
+### Tracing, metrics and containers
 
 **$0.** Langfuse Cloud has a free tier that a few hundred traces will not trouble.
 Docker is free. Nothing here is metered.
 
-### Increment 10 — deployed on GCP for about a week
+### Deploying to GCP for about a week
 
 The deployment exists to learn one thing: what breaks when the app scales out
 and the database does not. That takes days, not months, so it is sized and
@@ -57,9 +57,9 @@ Turn HA on and it roughly doubles. It teaches nothing here — leave it off.
 
 | | Cost |
 |---|---|
-| Building locally, increments 0–9 | $0 |
+| Everything built and run locally | $0 |
 | Model experimentation | < $5 |
-| Deployed for a week to learn increment 10 | ~$4 |
+| Deployed to GCP for a week | ~$4 |
 | **Total** | **< $10** |
 
 Against $300 of credit this is noise. The binding constraint is the credit's
@@ -75,7 +75,7 @@ One control, and it is the only one that matters:
 gcloud sql instances delete claim-loop-db
 ```
 
-**Delete the instance when the increment is done.** Take a `pg_dump` first if you
+**Delete the instance when you are done with it.** Take a `pg_dump` first if you
 want the corrections; recreating takes minutes and the schema is in `migrations/`.
 
 If you want to pause rather than delete between sessions:
@@ -94,7 +94,7 @@ Two traps worth naming because they are easy to walk into:
 - **Cloud SQL high availability** doubles the cost and teaches nothing here.
 - **Sizing up "to be safe."** The smallest shared-core tier is more than enough
   for 18 documents. A larger tier also raises `max_connections`, which hides the
-  connection-exhaustion lesson this increment exists to teach.
+  connection-exhaustion lesson the deployment exists to teach.
 
 ---
 
@@ -102,7 +102,7 @@ Two traps worth naming because they are easy to walk into:
 
 The scarcer budget, and the one worth planning.
 
-| Increments | Evenings | What happens |
+| Step | Evenings | What happens |
 |---|---|---|
 | 0 — decisions | 1 | Fill in `DECISIONS.md`. The state machine and D-003 settle the schema |
 | 1–2 — schema, routing | 2 | Migration, two tables, submit, stub extractor, confidence threshold |
@@ -112,7 +112,7 @@ The scarcer budget, and the one worth planning.
 | 9–10 — idempotency, deploy | 1–2 | Unique index; then Cloud Run + Cloud SQL |
 | **Total** | **~9** | |
 
-Increments 3 and 4 are the ones to slow down on. Everything before them is setup
+The locking and lease steps are the ones to slow down on. Everything before is setup
 and everything after is extension — the locking and lease work is the reason the
 project exists.
 

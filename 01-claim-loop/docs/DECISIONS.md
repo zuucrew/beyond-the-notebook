@@ -174,7 +174,7 @@ defend beat a threshold of 0.8 chosen because it looked round.
 - **One LLM call** with a structured output schema
 - **Real OCR** (Tesseract, Document AI, Textract)
 
-*Recommendation on file: stub for v0.1, LLM at increment 5.* Real OCR is a
+*Recommendation on file: a stub first, a real model once the queue works.* Real OCR is a
 trap — it is the part I already know how to do, and it would eat every evening
 I have. Whatever I pick, the interface must be identical across all three so
 swapping is a one-line change. Design that seam deliberately.
@@ -366,7 +366,7 @@ than something left standing.
 **Chosen:** GCP. Cloud Run — a Service for the API, Jobs for the worker and
 reaper — with Cloud SQL for PostgreSQL 16, Cloud Storage for documents, and
 Secret Manager. Smallest shared-core tier, HA off. **Deployed for roughly one
-week to learn the increment, then deleted.** Costed in `ESTIMATE.md` at ~$4.
+week to learn what breaks when the app scales out, then deleted.** Costed in `ESTIMATE.md` at ~$4.
 
 **Why:**
 

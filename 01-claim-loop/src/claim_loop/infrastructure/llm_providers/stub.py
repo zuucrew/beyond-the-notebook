@@ -4,16 +4,16 @@ It does NOT read a PDF. It reads the ground-truth JSON sitting next to it in
 dataset/ and applies deterministic, controlled corruption -- dropping fields,
 mangling values, assigning confidence.
 
-That is better than a real model for increments 1-4, because:
+It is better than a real model while the queue is being built, because:
 
   * it is deterministic, so the same claim behaves the same way every run
   * it costs nothing and takes no time, so tests stay fast
   * the correct answer is known, so you can actually measure whether routing
     sent the right things to a human
 
-Increment 5 replaces this with a real vision model. The interface -- take a
-storage_uri, return {field: {value, confidence, source}} -- must not change.
-That stability is the whole point of the seam.
+A real vision model replaces this later. The interface -- take a storage_uri,
+return {field: {value, confidence, source}} -- must not change when it does.
+That stability is the whole point of putting it behind this seam.
 """
 import hashlib
 import json
@@ -23,7 +23,8 @@ from ...config import PROJECT_ROOT
 
 
 def _local_path(storage_uri: str) -> Path:
-    """file://... -> Path. gs://... will need a download at increment 10.
+    """file://... -> Path. gs:// will need a download once documents move to
+    object storage.
 
     Paths are stored RELATIVE to the project root. An absolute host path such as
     /Users/me/claim-loop/dataset/x.pdf does not exist inside a container, so

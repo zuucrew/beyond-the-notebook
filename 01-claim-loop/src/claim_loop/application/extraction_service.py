@@ -22,7 +22,7 @@ def process_one(worker_id: str) -> dict | None:
 
     try:
         # No transaction held here. This is the slow part -- a stub today,
-        # a 30-second vision model call at increment 5.
+        # a 30-second vision model call once the stub is replaced.
         extracted = extract(claim["storage_uri"])
         status, reasons = route(extracted)
     except Exception as exc:

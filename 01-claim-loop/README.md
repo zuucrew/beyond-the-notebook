@@ -223,7 +223,7 @@ ask for, and there are no signed URLs for a reviewer to view the document.
 
 **Objects are named by content hash.** Uploading the same file twice produces the
 same object, so dedup and upload-retry are free — and a unique index on
-`storage_uri` turns that into idempotent submit (increment 9).
+`storage_uri` turns that into idempotent submit — the same file twice is one claim.
 
 **Order matters, because there is no transaction across two systems.** Uploading
 to object storage and inserting the claim row cannot be atomic:
@@ -407,11 +407,11 @@ docker compose run --rm app review
 | `LEASE_SECONDS` | `900` | How long a worker or reviewer holds a claim |
 | `MAX_ATTEMPTS` | `3` | Attempts before `extraction_failed` |
 | `DB_POOL_MAX` | `5` | Pool size per process — see the deploy note below |
-| `GROQ_API_KEY` | — | Increment 5 onward |
+| `GROQ_API_KEY` | — | Only once a real model replaces the stub |
 
 ---
 
-## Deploying (increment 10)
+## Deploying
 
 **Two different Cloud Run shapes, and you need both:**
 
@@ -456,21 +456,21 @@ It comes from Secret Manager, never from a file. Commands in `docs/RUN.md`.
 
 **Cost shape:** compute scales to zero and rounds to nothing at this volume.
 **Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
-meter always running, which is why this increment is scoped as a one-week run
+meter always running, which is why the deployment is scoped as a one-week run
 and then deleted. About $4 all in; see `docs/ESTIMATE.md`.
 
 **Watch the pool arithmetic here specifically.** The smallest Cloud SQL tiers
 allow roughly 25–50 connections, and `pool.py` defaults to `max_size=5`. Sizing
-*up* to avoid the problem also hides the lesson this increment exists to teach.
+*up* to avoid the problem also hides the lesson the deployment exists to teach.
 
 ---
 
 ## Build plan
 
-Each increment adds exactly **one** concept, so every commit has a lesson
-attached. Commits are never squashed.
+The order to build in. Each row is one commit that adds exactly **one** concept,
+so the commit history reads as a list of lessons. Commits are never squashed.
 
-| # | Adds | Concept |
+| Step | Adds | The one concept |
 |---|---|---|
 | 0 | `docs/DECISIONS.md` filled in before any code | — |
 | 1 | Schema + state machine, single reviewer, happy path | schema design, transactions |
@@ -487,13 +487,14 @@ attached. Commits are never squashed.
 
 ### The v0.1 stub
 
-Increments 1–4 do **not** read a PDF. The stub reads the ground-truth JSON in
+Steps 1–4 do **not** read a PDF. The stub reads the ground-truth JSON in
 `dataset/`, applies controlled corruption — drop a field, mangle a value,
 assign a confidence — and emits that.
 
 Deterministic, free, instant, and because the correct answer is known you can
 actually measure whether routing sent the right things to a human. The 18 PDFs
-sit unused until increment 5. If you open a PDF library this week, that's drift.
+sit unused until a real model replaces the stub. If you open a PDF library
+while building the queue, that's drift.
 
 ---
 
@@ -521,9 +522,9 @@ sit unused until increment 5. If you open a PDF library this week, that's drift.
         │   ├── migrate.py
         │   └── claims_repository.py   the queue. SKIP LOCKED lives here
         ├── llm_providers/
-        │   └── stub.py            swapped for a real model at increment 5
+        │   └── stub.py            swapped for a real model later
         └── api/
-            └── cli.py             becomes FastAPI at increment 9
+            └── cli.py             becomes FastAPI if a UI is added
 ```
 
 **Dependencies point inward only:** `infrastructure -> application -> domain`.
