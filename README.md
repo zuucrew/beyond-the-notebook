@@ -10,29 +10,84 @@ Every project ships with the reasoning attached — what was considered, what wa
 chosen, why, and what breaks at scale. **The decisions are the product. The code
 is the excuse to write them down.**
 
+---
+
 ## Projects
 
-### [claim-loop](claim-loop/) · L2 + deployed · in progress
+Listed in build order. Each links to its own README with architecture and
+schema diagrams.
 
-**Human-in-the-loop claims processing.** Documents arrive, a machine extracts
-fields, low-confidence extractions are routed to a human reviewer, and the
-human's correction is captured as a first-class signal rather than an overwrite.
+| Project | What it is | Teaches | Level | Status |
+|---|---|---|---|---|
+| **[claim-loop](claim-loop/)** | Claims get OCR'd, low-confidence fields go to a human reviewer, corrections are kept as signal | queues · task claiming · leases · append-only audit | L2 + deployed | 🔨 building |
 
-The idea it's built around: *human-in-the-loop is not a UI feature.* A human is
-a worker that is slow, expensive, unreliable, and impossible to retry cheaply —
-so putting one in a pipeline turns a request/response call into an async queue
-with a state machine. Every hard problem in the project follows from that.
+<!-- Template for the next row — keep it to one line per cell:
+| **[name](name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
+-->
 
-Built on Postgres with no message broker, because the queue entry and the claim
-are the same row.
+---
 
-*Covers:* async queues · task claiming without double-assignment · leases and
-at-least-once delivery · append-only audit design · confidence routing and its
-cost model · LLM observability
+## Find a concept
 
-## How these are structured
+What each idea is covered by, and where. This is the map that stops five
+projects teaching the same three things.
 
-Every project is a folder in this repo containing four files:
+**APIs and protocols**
+
+| Concept | Covered by |
+|---|---|
+| HTTP APIs, status codes, idempotency | 🔨 claim-loop |
+| Streaming — SSE, WebSockets | ⬜ |
+| Auth — API keys, JWT, OAuth | ⬜ |
+
+**Resilience**
+
+| Concept | Covered by |
+|---|---|
+| Retries, exponential backoff, jitter | ⬜ |
+| Rate limiting, backpressure | ⬜ |
+| Circuit breakers, graceful degradation | ⬜ |
+
+**Async and messaging**
+
+| Concept | Covered by |
+|---|---|
+| Async queues, producer/consumer | 🔨 claim-loop |
+| At-least-once vs exactly-once delivery | 🔨 claim-loop |
+
+**Data**
+
+| Concept | Covered by |
+|---|---|
+| Storage choice — SQL vs KV vs object vs vector | 🔨 claim-loop |
+| Schema design, indexes, query plans | 🔨 claim-loop |
+| Migrations, transactions, connection pooling | 🔨 claim-loop |
+| N+1 queries and how to spot them | ⬜ |
+| Caching, TTLs, invalidation | ⬜ |
+
+**Delivery**
+
+| Concept | Covered by |
+|---|---|
+| Containers, layers, multi-stage builds | 🔨 claim-loop |
+| CI — automated tests on push | ⬜ |
+| CD — automated deploy on merge | ⬜ |
+| Kubernetes — Deployments, Services, probes | ⬜ |
+| Autoscaling, health checks, scale-to-zero | ⬜ |
+
+**Operations**
+
+| Concept | Covered by |
+|---|---|
+| Observability — logs, metrics, traces | 🔨 claim-loop |
+| Secrets and security boundaries | ⬜ |
+| Cost modelling | 🔨 claim-loop |
+
+✅ done · 🔨 building · ⬜ not covered yet
+
+---
+
+## How each project is structured
 
 | File | What's in it |
 |---|---|
@@ -60,10 +115,14 @@ design decision — overbuilding wastes as much time as underbuilding.
 | **L3** | Tests and CI on every push | The CI/CD reps are the point |
 | **L4** | Kubernetes, CD, observability | Deployment or scaling *is* the lesson |
 
+Levels compose with deployment independently — `L2 + deployed` means a container
+running in the cloud without Kubernetes or a pipeline, which is a real and
+common shape.
+
 ## Conventions
 
-- Each project is developed on its own branch, `project/<name>`, and merged to
-  `main` when it reaches its declared depth.
+- Each project is developed on a branch named after it, merged to `main` when it
+  reaches its declared depth. Root-level files are edited on `main` directly.
 - Increment commits are **never squashed**. Each commit adds exactly one concept,
   so the commit history is the lesson log.
 - Diagrams are Mermaid in fenced code blocks — text, so they diff in review and
