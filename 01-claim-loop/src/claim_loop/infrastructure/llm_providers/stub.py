@@ -18,15 +18,31 @@ That stability is the whole point of the seam.
 import hashlib
 import json
 from pathlib import Path
-from urllib.parse import urlparse
+
+from ...config import PROJECT_ROOT
 
 
 def _local_path(storage_uri: str) -> Path:
-    """file://... -> Path. gs://... will need a download at increment 10."""
-    parsed = urlparse(storage_uri)
-    if parsed.scheme in ("", "file"):
-        return Path(parsed.path or storage_uri.removeprefix("file://"))
-    raise NotImplementedError(f"no reader for scheme {parsed.scheme!r} yet")
+    """file://... -> Path. gs://... will need a download at increment 10.
+
+    Paths are stored RELATIVE to the project root. An absolute host path such as
+    /Users/me/claim-loop/dataset/x.pdf does not exist inside a container, so
+    baking one into storage_uri makes every claim unreadable the moment the
+    worker runs anywhere but the machine that submitted it.
+
+    Containerisation is what surfaces this. It is worth noticing that the fix is
+    a storage decision, not a Docker one.
+    """
+    if storage_uri.startswith("file://"):
+        raw = storage_uri[len("file://"):]
+    elif "://" not in storage_uri:
+        raw = storage_uri
+    else:
+        scheme = storage_uri.split("://", 1)[0]
+        raise NotImplementedError(f"no reader for scheme {scheme!r} yet")
+
+    path = Path(raw)
+    return path if path.is_absolute() else PROJECT_ROOT / path
 
 
 def _unit(seed: str) -> float:

@@ -1,0 +1,51 @@
+# Local development. Postgres plus the worker.
+#
+#   docker compose up -d db          start just the database
+#   docker compose run --rm app migrate-up
+#   docker compose run --rm app submit
+#   docker compose up app            run the extraction worker
+#   docker compose up --scale app=3 app     three workers racing on SKIP LOCKED
+#   docker compose run --rm app status
+#   docker compose exec db psql -U claim -d claimloop
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: claim
+      POSTGRES_PASSWORD: claim
+      POSTGRES_DB: claimloop
+    ports:
+      # Exposed so psql and a host-run CLI can reach it. Drop this line and the
+      # database is reachable only from inside the compose network.
+      - "5432:5432"
+    volumes:
+      - claim-loop-db:/var/lib/postgresql/data
+    healthcheck:
+      # Without this, the app starts before Postgres accepts connections and
+      # fails on its first query. depends_on alone waits for the container to
+      # exist, not for the service inside it to be ready.
+      test: ["CMD-SHELL", "pg_isready -U claim -d claimloop"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # 'db' is the service name; compose resolves it on the internal network.
+      DATABASE_URL: postgresql://claim:claim@db:5432/claimloop
+      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.80}
+      LEASE_SECONDS: ${LEASE_SECONDS:-900}
+      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
+      # Read from .env by compose interpolation. Not baked into the image.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    volumes:
+      - ./dataset:/app/dataset:ro
+    command: ["work"]
+
+volumes:
+  claim-loop-db:

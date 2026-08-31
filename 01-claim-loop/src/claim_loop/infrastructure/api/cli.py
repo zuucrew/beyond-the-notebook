@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ...application import extraction_service
-from ...config import CONFIDENCE_THRESHOLD, DATASET_DIR, LEASE_SECONDS
+from ...config import CONFIDENCE_THRESHOLD, DATASET_DIR, LEASE_SECONDS, PROJECT_ROOT
 from ...domain.routing import ALWAYS_ESCALATE, MANDATORY_FIELDS, fields_needing_review
 from ..db import claims_repository as repo, migrate
 
@@ -49,7 +49,13 @@ def submit(
 
     created = duplicate = 0
     for path in files:
-        uri = f"file://{path.resolve()}"
+        # Relative to the project root, so the same claim resolves on the host
+        # and inside a container. An absolute host path would not.
+        resolved = path.resolve()
+        try:
+            uri = f"file://{resolved.relative_to(PROJECT_ROOT)}"
+        except ValueError:
+            uri = f"file://{resolved}"
         form_code = path.name.split("_")[0]
         claim_id = repo.submit(client, form_code, uri)
         if claim_id:

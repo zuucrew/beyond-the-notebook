@@ -380,10 +380,42 @@ GROQ_API_KEY=...
 DATABASE_URL=postgresql://claim:claim@localhost:5432/claimloop
 ```
 
-**Start Postgres:**
+### With Docker (increment 8)
 
 ```bash
-docker run -d --name claim-loop-db -e POSTGRES_USER=claim -e POSTGRES_PASSWORD=claim -e POSTGRES_DB=claimloop -p 5432:5432 postgres:16
+docker compose up -d db
+```
+
+```bash
+docker compose run --rm app migrate-up
+```
+
+```bash
+docker compose run --rm app submit
+```
+
+```bash
+docker compose up app
+```
+
+Three workers racing on the same queue — this is the `SKIP LOCKED` proof:
+
+```bash
+docker compose up --scale app=3 app
+```
+
+A psql shell:
+
+```bash
+docker compose exec db psql -U claim -d claimloop
+```
+
+### Without Docker
+
+Postgres natively, if you would rather see the database directly:
+
+```bash
+brew install postgresql@16 && brew services start postgresql@16 && createdb claimloop
 ```
 
 **Install:**
@@ -458,6 +490,7 @@ attached. Commits are never squashed.
 | 6 | Langfuse trace on extraction, human verdict as a score | closing the feedback loop |
 | 7 | Queue depth, agreement rate, review latency | operational observability |
 | 8 | Dockerfile + compose | **L2** — containers, layers, multi-stage |
+|   | *(built early — it surfaced a real bug: absolute host paths in `storage_uri` do not exist inside a container)* | |
 | 9 | Idempotent submit — same file twice is one claim | idempotency |
 | 10 | Deploy — Service + Jobs, GCS, Cloud SQL | connection pooling, cost modelling |
 
