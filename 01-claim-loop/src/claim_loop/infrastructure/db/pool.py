@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from .config import DATABASE_URL
+from ...config import DATABASE_URL
 
 _pool: ConnectionPool | None = None
 

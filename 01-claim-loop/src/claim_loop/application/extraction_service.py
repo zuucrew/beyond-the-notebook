@@ -9,14 +9,14 @@ That is the most common way database-as-queue goes wrong.
 """
 import time
 
-from . import queue
-from .extractor import extract
-from .routing import route
+from ..domain.routing import route
+from ..infrastructure.db import claims_repository as repo
+from ..infrastructure.llm_providers.stub import extract
 
 
 def process_one(worker_id: str) -> dict | None:
     """Handle a single claim. Returns a summary, or None if the queue is empty."""
-    claim = queue.claim_next_for_extraction(worker_id)   # transaction. ~1ms
+    claim = repo.claim_next_for_extraction(worker_id)   # transaction. ~1ms
     if claim is None:
         return None
 
@@ -26,7 +26,7 @@ def process_one(worker_id: str) -> dict | None:
         extracted = extract(claim["storage_uri"])
         status, reasons = route(extracted)
     except Exception as exc:
-        outcome = queue.fail_extraction(claim["id"], claim["attempt_count"])
+        outcome = repo.fail_extraction(claim["id"], claim["attempt_count"])
         return {
             "id": claim["id"],
             "status": outcome,
@@ -34,7 +34,7 @@ def process_one(worker_id: str) -> dict | None:
             "attempt": claim["attempt_count"],
         }
 
-    queue.finish_extraction(claim["id"], extracted, status, actor=worker_id)  # transaction
+    repo.finish_extraction(claim["id"], extracted, status, actor=worker_id)  # transaction
     return {
         "id": claim["id"],
         "status": status,
@@ -44,7 +44,7 @@ def process_one(worker_id: str) -> dict | None:
 
 
 def run(worker_id: str, once: bool = False, poll_seconds: float = 1.0):
-    """Drain the queue.
+    """Drain the repo.
 
     once=True  -> process until empty, then return. This is the cron / Cloud Run
                   Job shape: start, drain, exit, cost nothing until next fired.

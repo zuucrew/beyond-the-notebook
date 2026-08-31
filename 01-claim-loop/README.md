@@ -477,13 +477,34 @@ sit unused until increment 5. If you open a PDF library this week, that's drift.
 
 ```
 01-claim-loop/
-├── README.md       this file
-├── DECISIONS.md    what was considered, chosen, why, and what changed my mind
-├── LIMITS.md       what breaks at scale, and what I'd do about it
-├── dataset/        18 synthetic claim PDFs + ground-truth JSON
-├── migrations/     numbered .sql, applied in order
-└── src/
+├── README.md          this file
+├── DECISIONS.md       considered, chosen, why, and what changed my mind
+├── LIMITS.md          what breaks at scale, and what I'd do about it
+├── ESTIMATE.md        what it costs to build — money and evenings
+├── dataset/           18 synthetic claim PDFs + ground-truth JSON
+├── migrations/        numbered .sql, applied in order
+└── src/claim_loop/
+    ├── config.py
+    ├── domain/                    business rules. imports nothing external
+    │   └── routing.py             thresholds, mandatory fields, escalation
+    ├── application/               use cases
+    │   └── extraction_service.py  claim -> extract -> route -> finish
+    └── infrastructure/            everything replaceable
+        ├── db/
+        │   ├── pool.py
+        │   ├── migrate.py
+        │   └── claims_repository.py   the queue. SKIP LOCKED lives here
+        ├── llm_providers/
+        │   └── stub.py            swapped for a real model at increment 5
+        └── api/
+            └── cli.py             becomes FastAPI at increment 9
 ```
+
+**Dependencies point inward only:** `infrastructure -> application -> domain`.
+`domain/` has no database, no network, no framework — so the routing rules are
+testable with a plain function call. Folders exist only where there is something
+to put in them; the template this follows has `memory/`, `prompts/`,
+`mcp_clients/` and more, and this project needs none of them yet.
 
 ## Still open
 

@@ -4,7 +4,7 @@ Routing is a pure function of the extraction result. That is why there is no
 'extracted' state in the database -- extraction and routing commit together, so
 a claim is never parked in a state nothing queries.
 """
-from .config import CONFIDENCE_THRESHOLD
+from ..config import CONFIDENCE_THRESHOLD
 
 # Present in the mandatory_only and gaps dataset variants. In a multi-form
 # system this moves into a template table (D-012); with one form type it is a

@@ -6,8 +6,8 @@ correctness property in this file follows from it.
 """
 from psycopg.types.json import Json
 
-from .config import LEASE_SECONDS, MAX_ATTEMPTS
-from .db import transaction
+from ...config import LEASE_SECONDS, MAX_ATTEMPTS
+from .pool import transaction
 
 TERMINAL = ("auto_approved", "approved", "rejected", "incomplete", "extraction_failed")
 

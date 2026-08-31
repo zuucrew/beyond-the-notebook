@@ -4,8 +4,8 @@ Numbered .sql files, applied in order, recorded in schema_migrations. About
 thirty lines, which is the point -- a migration is a file and a discipline, not
 a framework.
 """
-from .config import MIGRATIONS_DIR
-from .db import transaction
+from ...config import MIGRATIONS_DIR
+from .pool import transaction
 
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS schema_migrations (

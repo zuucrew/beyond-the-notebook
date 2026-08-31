@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-claim-loop = "claim_loop.cli:app"
+claim-loop = "claim_loop.infrastructure.api.cli:app"
 
 [build-system]
 requires = ["hatchling"]

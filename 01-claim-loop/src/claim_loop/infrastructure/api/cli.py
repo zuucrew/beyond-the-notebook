@@ -12,9 +12,10 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import migrate, queue, worker
-from .config import CONFIDENCE_THRESHOLD, DATASET_DIR, LEASE_SECONDS
-from .routing import ALWAYS_ESCALATE, MANDATORY_FIELDS, fields_needing_review
+from ...application import extraction_service
+from ...config import CONFIDENCE_THRESHOLD, DATASET_DIR, LEASE_SECONDS
+from ...domain.routing import ALWAYS_ESCALATE, MANDATORY_FIELDS, fields_needing_review
+from ..db import claims_repository as repo, migrate
 
 app = typer.Typer(add_completion=False, help="Human-in-the-loop claims processing.")
 console = Console()
@@ -50,7 +51,7 @@ def submit(
     for path in files:
         uri = f"file://{path.resolve()}"
         form_code = path.name.split("_")[0]
-        claim_id = queue.submit(client, form_code, uri)
+        claim_id = repo.submit(client, form_code, uri)
         if claim_id:
             created += 1
             console.print(f"[green]queued[/green]  {path.name}  [dim]{claim_id}[/dim]")
@@ -77,7 +78,7 @@ def work(
         "extraction_failed": "red",
     }
     try:
-        for result in worker.run(wid, once=once):
+        for result in extraction_service.run(wid, once=once):
             colour = colours.get(result["status"], "white")
             console.print(
                 f"[{colour}]{result['status']:<18}[/{colour}] {result['id'][:8]}"
@@ -93,7 +94,7 @@ def work(
 def review(reviewer: str = typer.Option(None, help="Defaults to host-pid.")):
     """Claim the next review task and correct it."""
     rid = reviewer or _default_actor("reviewer")
-    claim = queue.claim_next_for_review(rid)
+    claim = repo.claim_next_for_review(rid)
     if claim is None:
         console.print("[dim]nothing waiting for review[/dim]")
         return
@@ -143,7 +144,7 @@ def review(reviewer: str = typer.Option(None, help="Defaults to host-pid.")):
     # A mandatory field the reviewer confirms is empty is not a review failure.
     # The information is not on the form, so it goes back to the claimant.
     status = "incomplete" if confirmed_blank_mandatory else "approved"
-    queue.complete_review(claim["id"], extracted, events, rid, status)
+    repo.complete_review(claim["id"], extracted, events, rid, status)
 
     corrected = sum(1 for e in events if e["event_type"] == "corrected")
     console.print(f"\n[green]{status}[/green] — {corrected} corrected, {len(events)} reviewed")
@@ -151,8 +152,8 @@ def review(reviewer: str = typer.Option(None, help="Defaults to host-pid.")):
 
 @app.command()
 def reap():
-    """Return abandoned work to its queue. Run this on a schedule."""
-    revived = queue.reap_expired()
+    """Return abandoned work to its repo. Run this on a schedule."""
+    revived = repo.reap_expired()
     if not revived:
         console.print("[dim]no expired leases[/dim]")
         return
@@ -163,7 +164,7 @@ def reap():
 @app.command()
 def status(stuck_after: str = typer.Option("1 hour", help="Age at which a claim counts as stuck.")):
     """Where every claim is, and whether anything is stuck."""
-    counts = queue.status_counts()
+    counts = repo.status_counts()
     if not counts:
         console.print("[dim]no claims[/dim]")
         return
@@ -175,7 +176,7 @@ def status(stuck_after: str = typer.Option("1 hour", help="Age at which a claim 
         table.add_row(row["status"], str(row["n"]))
     console.print(table)
 
-    stuck = queue.stuck_claims(stuck_after)
+    stuck = repo.stuck_claims(stuck_after)
     if stuck:
         console.print(f"\n[red]{len(stuck)} stuck (no movement in {stuck_after})[/red]")
         for row in stuck[:10]:
@@ -187,7 +188,7 @@ def status(stuck_after: str = typer.Option("1 hour", help="Age at which a claim 
 @app.command()
 def history(claim_id: str):
     """Every recorded event for one claim — the model's answer and the human's."""
-    events = queue.field_history(claim_id)
+    events = repo.field_history(claim_id)
     if not events:
         console.print("[dim]no events[/dim]")
         return
