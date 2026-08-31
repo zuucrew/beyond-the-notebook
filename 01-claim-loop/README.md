@@ -121,7 +121,7 @@ erDiagram
         text client_id
         text form_code
         text form_version
-        text source_file
+        text storage_uri
         text status
         timestamptz lease_expires_at
         text reviewer_id
@@ -179,6 +179,7 @@ model is wrong.
 | `claims (created_at) WHERE status = 'pending_review'` | Partial. Stops the claiming query becoming a sequential scan as terminal claims accumulate |
 | `claims (lease_expires_at) WHERE status = 'in_review'` | The reaper's scan |
 | `field_events (claim_id)` | Loading one claim's history |
+| `claims (storage_uri)` unique | Idempotent submit — same file, one claim |
 | GIN on `claims (extracted)` | Only when a real containment query needs it |
 
 ---
