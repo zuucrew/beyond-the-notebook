@@ -26,6 +26,8 @@ with architecture and schema diagrams.
 | **[NN-name](NN-name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
 -->
 
+Ideas considered but not started are in [IDEAS.md](IDEAS.md).
+
 ---
 
 ## Find a concept
