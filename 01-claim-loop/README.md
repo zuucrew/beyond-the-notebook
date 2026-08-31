@@ -240,7 +240,7 @@ swept later; a row pointing at nothing is a broken claim.
 **The one hole this leaves:** if the process dies between upload and insert *and*
 the client never retries, there is an object with no claim and nothing in the
 system knows a submission was attempted. A periodic reconciliation sweep —
-objects with no matching row — is the only way to close it. See `LIMITS.md`.
+objects with no matching row — is the only way to close it. See `docs/LIMITS.md`.
 
 ---
 
@@ -367,7 +367,7 @@ FROM claims WHERE status = 'submitted' GROUP BY status;
 | Deploy (inc. 10) | Cloud Run + Cloud SQL + GCS + Secret Manager |
 
 **Not used:** Redis · Celery/RQ · any ORM · Alembic · Kafka · Kubernetes · CI.
-Each is excluded for a reason recorded in `DECISIONS.md`, not by oversight.
+Each is excluded for a reason recorded in `docs/DECISIONS.md`, not by oversight.
 
 ---
 
@@ -470,7 +470,7 @@ This is nearly impossible to feel locally, where you only ever run one process.
 
 **Cost shape:** compute scales to zero and rounds to nothing at this volume.
 **Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
-meter always running. See `ESTIMATE.md`.
+meter always running. See `docs/ESTIMATE.md`.
 
 ---
 
@@ -481,7 +481,7 @@ attached. Commits are never squashed.
 
 | # | Adds | Concept |
 |---|---|---|
-| 0 | `DECISIONS.md` filled in before any code | — |
+| 0 | `docs/DECISIONS.md` filled in before any code | — |
 | 1 | Schema + state machine, single reviewer, happy path | schema design, transactions |
 | 2 | Confidence routing — auto-approve vs escalate | the cost model behind the threshold |
 | 3 | **Concurrent claiming with `SKIP LOCKED`, two workers racing** | row locking ← the real lesson |
@@ -511,9 +511,10 @@ sit unused until increment 5. If you open a PDF library this week, that's drift.
 ```
 01-claim-loop/
 ├── README.md          this file
-├── DECISIONS.md       considered, chosen, why, and what changed my mind
-├── LIMITS.md          what breaks at scale, and what I'd do about it
-├── ESTIMATE.md        what it costs to build — money and evenings
+├── docs/
+│   ├── DECISIONS.md   considered, chosen, why, and what changed my mind
+│   ├── LIMITS.md      what breaks at scale, and what I'd do about it
+│   └── ESTIMATE.md    what it costs to build — money and evenings
 ├── dataset/           18 synthetic claim PDFs + ground-truth JSON
 ├── migrations/        numbered .sql, applied in order
 └── src/claim_loop/
@@ -541,7 +542,7 @@ to put in them; the template this follows has `memory/`, `prompts/`,
 
 ## Still open
 
-Recorded in `DECISIONS.md`, and worth settling as you build rather than up front:
+Recorded in `docs/DECISIONS.md`, and worth settling as you build rather than up front:
 
 - **D-003** — when a lease expires mid-edit and two reviewers submit corrections
   for the same claim, who wins?

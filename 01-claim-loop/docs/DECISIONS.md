@@ -239,7 +239,7 @@ What I give up, and should not be surprised by later:
   normal outcome, not an exception.
 - **Provider-specific features don't pass through** — prompt caching, logprobs,
   and anything else outside the common surface.
-- **A markup**, and a third party in the critical path (see LIMITS.md).
+- **A markup**, and a third party in the critical path (see LIMITS.md in this folder).
 - **Requests route through a third party.** Irrelevant here because the data is
   synthetic. In a real claims system, routing PII through an aggregator is a
   compliance question, not a technical one.
