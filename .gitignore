@@ -1,0 +1,8 @@
+.DS_Store
+
+# Working notes, deliberately untracked.
+docs/ROADMAP.md
+
+# Commercial in confidence: names the client, the fund and the insurers.
+# This repository is public.
+*.docx
