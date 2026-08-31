@@ -468,9 +468,18 @@ a pooler (PgBouncer, or Cloud SQL's built-in) in front.
 
 This is nearly impossible to feel locally, where you only ever run one process.
 
+**Database:** Cloud SQL for PostgreSQL 16 — the same version as
+`docker-compose.yml`, so nothing in `migrations/` or `src/` changes. Only
+`DATABASE_URL` does.
+
 **Cost shape:** compute scales to zero and rounds to nothing at this volume.
 **Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
-meter always running. See `docs/ESTIMATE.md`.
+meter always running, which is why this increment is scoped as a one-week run
+and then deleted. About $4 all in; see `docs/ESTIMATE.md`.
+
+**Watch the pool arithmetic here specifically.** The smallest Cloud SQL tiers
+allow roughly 25–50 connections, and `pool.py` defaults to `max_size=5`. Sizing
+*up* to avoid the problem also hides the lesson this increment exists to teach.
 
 ---
 

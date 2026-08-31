@@ -341,10 +341,32 @@ No Kubernetes and no CI/CD in this project — deliberately. Containers yes.
 - **Local only (docker-compose)** — zero cost, loses the connection-limit lesson
 
 The cost trap to write down: the *app* scales to zero, the *database does not*.
-A managed Postgres runs 24/7 and bills 24/7. That is the line item that will
-quietly eat the $300 credit while nothing is happening.
+A managed Postgres runs 24/7 and bills 24/7. That is the line item that would
+quietly eat the $300 credit — which is why this is scoped as a short run rather
+than something left standing.
 
-**Chosen:**
+### Facts that constrain this decision
+
+- Cloud SQL runs **PostgreSQL 16**, matching `docker-compose.yml` exactly.
+  `gen_random_uuid()`, `make_interval`, `JSONB`, partial indexes and
+  `FOR UPDATE SKIP LOCKED` are all standard and all available.
+- No superuser, but `cloudsqlsuperuser` can create roles — enough for the
+  INSERT-only audit grants a later project wants.
+- **`max_connections` is tied to instance size**, and the smallest tiers give
+  roughly 25–50. `pool.py` currently uses `max_size=5`, so ten Cloud Run
+  instances is fifty connections and already over. Cap `--max-instances`, or drop
+  the pool to 1–2, which is normal on serverless.
+- **Migrations must not run on app start.** Ten instances booting means ten
+  concurrent `CREATE TABLE`s and the migration runner has no lock. They run as
+  their own Cloud Run Job that must exit 0 before the new revision deploys.
+- Networking is a fork: public IP behind the Cloud SQL connector is free and
+  IAM-gated; private IP matches TPD §2.4's *no public data-plane access* and
+  costs about $8/month for the serverless VPC connector.
+
+**Chosen:** GCP. Cloud Run — a Service for the API, Jobs for the worker and
+reaper — with Cloud SQL for PostgreSQL 16, Cloud Storage for documents, and
+Secret Manager. Smallest shared-core tier, HA off. **Deployed for roughly one
+week to learn the increment, then deleted.** Costed in `ESTIMATE.md` at ~$4.
 
 **Why:**
 
