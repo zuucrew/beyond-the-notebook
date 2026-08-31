@@ -43,7 +43,7 @@ in one store. See DECISIONS.md D-001.
 
 | Increment | Adds |
 |---|---|
-| 5 — real extraction | `anthropic` |
+| 5 — real extraction | `openai` SDK pointed at OpenRouter |
 | 6 — tracing | `langfuse` (Cloud free tier) |
 | 7 — metrics | `structlog`, JSON to stdout |
 | 8 — L2 | Dockerfile (multi-stage, `python:3.12-slim`) + docker compose |
