@@ -356,7 +356,7 @@ FROM claims WHERE status = 'submitted' GROUP BY status;
 | Layer | Choice |
 |---|---|
 | Runtime | Python 3.12+, `uv` |
-| Database | PostgreSQL 16, in Docker |
+| Database | **Cloud SQL for PostgreSQL 16**, reached through the Cloud SQL Auth Proxy. A throwaway local Postgres is available behind a compose profile |
 | Driver | `psycopg[binary,pool]` — psycopg 3, raw SQL, no ORM |
 | Migrations | numbered `.sql` in `migrations/`, applied by a runner in `src/` |
 | Queue | the `claims` table |
@@ -379,7 +379,7 @@ and the full GCP deploy and teardown.
 The short version:
 
 ```bash
-docker compose up -d db
+docker compose up -d cloudsql-proxy
 ```
 
 ```bash

@@ -8,14 +8,61 @@ Every command for this project, in one place. Local first, GCP at the bottom.
 
 ---
 
-## Local — Docker
+## Setting up Cloud SQL — do this first
 
-The default. Postgres and the worker both in containers.
+The database is Cloud SQL, not a container. You connect to it from your laptop
+through the Cloud SQL Auth Proxy, which authenticates with your own gcloud
+credentials and opens a local port. Nothing is exposed to the internet and there
+is no IP allowlist to maintain.
 
-Start the database:
+**Six things, once.**
+
+1. A GCP project with billing enabled.
+
+2. Enable the API — **APIs & Services → Library → Cloud SQL Admin API → Enable**,
+   or:
 
 ```bash
-docker compose up -d db
+gcloud services enable sqladmin.googleapis.com
+```
+
+3. Create the instance — **SQL → Create Instance → PostgreSQL**. Version 16,
+   Enterprise, **Sandbox** preset, region `australia-southeast1`, **Single zone**
+   (multiple zones is HA and doubles the bill), 10 GB SSD. Or:
+
+```bash
+gcloud sql instances create claim-loop-db --database-version=POSTGRES_16 --tier=db-f1-micro --region=australia-southeast1 --storage-size=10GB
+```
+
+4. Inside the instance: **Databases → Create Database** `claimloop`, then
+   **Users → Add User Account** `claim` with a password you keep.
+
+5. Authenticate your laptop so the proxy can use your credentials:
+
+```bash
+gcloud auth application-default login
+```
+
+6. Copy the **connection name** from the instance overview — it looks like
+   `project:region:claim-loop-db` — and write `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Fill in `CLOUDSQL_INSTANCE`, the password in `DATABASE_URL`, and `GROQ_API_KEY`.
+
+**Delete the instance when you are done with it.** It is the only thing that
+bills while idle.
+
+---
+
+## Local — running against Cloud SQL
+
+Start the proxy:
+
+```bash
+docker compose up -d cloudsql-proxy
 ```
 
 Apply migrations:
@@ -54,34 +101,45 @@ Return abandoned work to its queue:
 docker compose run --rm app reap
 ```
 
-Every recorded event for one claim — the model's answer and the human's:
+Every recorded event for one claim:
 
 ```bash
 docker compose run --rm app history <claim-id>
 ```
 
-A psql shell:
+A psql shell, through the proxy:
 
 ```bash
-docker compose exec db psql -U claim -d claimloop
+psql "postgresql://claim@localhost:5432/claimloop"
 ```
 
-Stop, keeping the data:
-
-```bash
-docker compose down
-```
-
-Stop and **destroy the database volume**:
-
-```bash
-docker compose down -v
-```
+Or in the browser: **SQL → your instance → Cloud SQL Studio**.
 
 Rebuild after a code change:
 
 ```bash
 docker compose build app
+```
+
+---
+
+## Local — offline, throwaway Postgres
+
+For working without a network, or for wiping the database and starting again.
+Runs on port 5433 so it cannot collide with the proxy.
+
+```bash
+docker compose --profile local up -d db
+```
+
+```bash
+DATABASE_URL=postgresql://claim:claim@db:5432/claimloop docker compose run --rm app migrate-up
+```
+
+Destroy it:
+
+```bash
+docker compose --profile local down -v
 ```
 
 ---

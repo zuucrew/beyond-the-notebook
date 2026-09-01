@@ -1,30 +1,56 @@
-# Local development. Postgres plus the worker.
+# Cloud SQL is the database. The proxy makes it reachable from here.
 #
-#   docker compose up -d db          start just the database
+# The Cloud SQL Auth Proxy authenticates with your own gcloud credentials and
+# opens a local port that tunnels to the instance. Nothing is exposed to the
+# internet, no IP allowlisting, and DATABASE_URL is an ordinary Postgres URL --
+# so the application cannot tell the difference between this and a local server.
+#
+#   docker compose up -d cloudsql-proxy
 #   docker compose run --rm app migrate-up
 #   docker compose run --rm app submit
-#   docker compose up app            run the extraction worker
-#   docker compose up --scale app=3 app     three workers racing on SKIP LOCKED
-#   docker compose run --rm app status
-#   docker compose exec db psql -U claim -d claimloop
+#   docker compose up app
+#
+# Offline, with a throwaway local Postgres instead:
+#
+#   docker compose --profile local up -d db
+#   DATABASE_URL=postgresql://claim:claim@db:5432/claimloop docker compose run --rm app status
 
 services:
+  cloudsql-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+    command:
+      - "--address=0.0.0.0"
+      - "--port=5432"
+      - "${CLOUDSQL_INSTANCE}"
+    volumes:
+      # Your own gcloud credentials, read-only. Created by:
+      #   gcloud auth application-default login
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/creds.json:ro
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /creds.json
+    ports:
+      # So psql on the host can reach it too.
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "/cloud-sql-proxy", "--version"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Optional. Only starts with --profile local, for working offline or for
+  # throwing the whole database away and starting again.
   db:
+    profiles: ["local"]
     image: postgres:16
     environment:
       POSTGRES_USER: claim
       POSTGRES_PASSWORD: claim
       POSTGRES_DB: claimloop
     ports:
-      # Exposed so psql and a host-run CLI can reach it. Drop this line and the
-      # database is reachable only from inside the compose network.
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - claim-loop-db:/var/lib/postgresql/data
     healthcheck:
-      # Without this, the app starts before Postgres accepts connections and
-      # fails on its first query. depends_on alone waits for the container to
-      # exist, not for the service inside it to be ready.
       test: ["CMD-SHELL", "pg_isready -U claim -d claimloop"]
       interval: 2s
       timeout: 3s
@@ -33,13 +59,12 @@ services:
   app:
     build: .
     depends_on:
-      db:
-        condition: service_healthy
+      cloudsql-proxy:
+        condition: service_started
     environment:
-      # Secrets and environment selection only. Every parameter — thresholds,
-      # model, pool size, dpi — lives in config.yml.
-      # 'db' is the service name; compose resolves it on the internal network.
-      DATABASE_URL: postgresql://claim:claim@db:5432/claimloop
+      # Secrets and environment selection only. Every parameter -- thresholds,
+      # model, pool size, dpi -- lives in config.yml.
+      DATABASE_URL: ${DATABASE_URL}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       APP_ENV: ${APP_ENV:-}
     volumes:
