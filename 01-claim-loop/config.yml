@@ -62,6 +62,13 @@ default:
     max_pages: 8
 
 
+# APP_ENV=offline -- the stub extractor. Free, deterministic, no network.
+# Use it to exercise the queue without spending anything.
+offline:
+  extraction:
+    provider: stub
+
+
 # APP_ENV=production
 production:
   database:

@@ -12,7 +12,7 @@ import base64
 import json
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf
 from openai import OpenAI
 
 from ...config import (
@@ -55,7 +55,7 @@ def _render_pages(pdf: Path) -> list[str]:
     count is a hard multiplier. Both are capped in config for that reason.
     """
     pages: list[str] = []
-    with fitz.open(pdf) as doc:
+    with pymupdf.open(pdf) as doc:
         for page in doc[:MAX_PAGES]:
             pixmap = page.get_pixmap(dpi=PDF_DPI)
             pages.append(base64.b64encode(pixmap.tobytes("png")).decode())
