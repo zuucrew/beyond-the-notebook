@@ -16,3 +16,7 @@ gcp-key.json
 # frontend
 node_modules/
 dist/
+
+# Uploaded documents. Content-addressed, regenerable, not source.
+backend/uploads/*
+!backend/uploads/.gitkeep

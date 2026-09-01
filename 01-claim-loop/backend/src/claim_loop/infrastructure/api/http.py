@@ -9,9 +9,10 @@ The queue semantics are unchanged. POST /claims/next-review runs the same
 SELECT ... FOR UPDATE SKIP LOCKED as the CLI, takes the same lease, and races
 the same way. A browser is just another consumer.
 """
+import hashlib
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -147,6 +148,47 @@ def document(claim_id: str):
     if not path.exists():
         raise HTTPException(404, "document missing")
     return FileResponse(path, media_type="application/pdf")
+
+
+UPLOADS = PROJECT_ROOT / "uploads"
+
+
+@app.post("/claims/upload")
+async def upload(file: UploadFile = File(...), client_id: str = "web"):
+    """Accept a claim document and enqueue it.
+
+    Writes the bytes first, inserts the row second. There is no transaction
+    across a filesystem and a database, so the order is chosen so the failure
+    mode is harmless: an orphaned file costs nothing and can be swept later,
+    while a row pointing at a missing file is a broken claim.
+
+    Objects are named by content hash, so uploading the same document twice
+    produces the same path -- and with the unique index on storage_uri, one
+    claim. Retrying a failed upload is therefore free rather than duplicating.
+    """
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(400, "only PDF files are accepted")
+
+    body = await file.read()
+    if not body:
+        raise HTTPException(400, "empty file")
+
+    digest = hashlib.sha256(body).hexdigest()
+    UPLOADS.mkdir(parents=True, exist_ok=True)
+    path = UPLOADS / f"{digest}.pdf"
+    if not path.exists():
+        path.write_bytes(body)
+
+    storage_uri = f"file://uploads/{digest}.pdf"
+    form_code = (file.filename or "unknown").split("_")[0].removesuffix(".pdf")
+    claim_id = repo.submit(client_id, form_code, storage_uri)
+
+    return {
+        "filename": file.filename,
+        "id": claim_id,
+        "duplicate": claim_id is None,
+        "bytes": len(body),
+    }
 
 
 @app.get("/claims")

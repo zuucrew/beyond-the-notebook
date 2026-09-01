@@ -65,3 +65,35 @@ button:disabled { opacity: .45; cursor: default; }
 .empty { padding: 60px 20px; text-align: center; color: var(--muted); }
 .err { color: var(--bad); padding: 10px 20px; }
 .muted { color: var(--muted); }
+
+/* role switch */
+.roles { display: flex; gap: 6px; }
+button.role { border-radius: 6px; padding: 6px 13px; }
+button.role.on { background: var(--accent); border-color: var(--accent); color: #05070c; font-weight: 600; }
+.badge {
+  margin-left: 7px; background: rgba(0,0,0,.28); border-radius: 9px;
+  padding: 0 6px; font-size: 11px; font-weight: 700;
+}
+button.role:not(.on) .badge { background: var(--accent); color: #05070c; }
+
+/* upload */
+.upload { max-width: 720px; margin: 42px auto; padding: 0 20px; }
+.drop {
+  border: 1.5px dashed var(--line); border-radius: 10px;
+  padding: 52px 20px; text-align: center; cursor: pointer;
+  display: flex; flex-direction: column; gap: 7px; background: var(--panel);
+}
+.drop:hover, .drop.over { border-color: var(--accent); background: #191d26; }
+.drop strong { font-size: 15px; font-weight: 600; }
+.note { font-size: 12.5px; margin-top: 16px; line-height: 1.6; }
+
+.results { width: 100%; margin-top: 22px; border-collapse: collapse; font-size: 13px; }
+.results td { padding: 7px 0; border-bottom: 1px solid var(--line); }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.tag { font-size: 11.5px; padding: 2px 7px; border-radius: 3px; }
+.tag.good { background: rgba(75,181,115,.16); color: var(--good); }
+.tag.warn { background: rgba(217,164,65,.16); color: var(--warn); }
+.tag.bad  { background: rgba(217,83,79,.18); color: #ff9b98; }
+
+.empty p { margin: 0 0 16px; }
+.empty .note { max-width: 430px; margin: 18px auto 0; }

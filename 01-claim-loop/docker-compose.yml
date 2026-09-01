@@ -23,6 +23,8 @@ x-backend: &backend
     APP_ENV: ${APP_ENV:-}
   volumes:
     - ./backend/dataset:/app/dataset:ro
+    # Writable: uploads land here and the worker reads them back.
+    - ./backend/uploads:/app/uploads
 
 services:
   cloudsql-proxy:

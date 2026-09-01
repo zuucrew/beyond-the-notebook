@@ -32,7 +32,25 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export type UploadResult = {
+  filename: string;
+  id: string | null;
+  duplicate: boolean;
+  bytes: number;
+};
+
 export const api = {
+  upload: async (file: File): Promise<UploadResult> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${BASE}/claims/upload`, { method: "POST", body: form });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res.json();
+  },
+  listClaims: (status: string) =>
+    json<{ claims: { id: string; form_code: string; status: string; attempt_count: number }[] }>(
+      `/claims?status=${status}`
+    ),
   stats: () => json<{ counts: Record<string, number>; stuck: number; threshold: number }>("/stats"),
   nextReview: () => json<Claim>("/claims/next-review", { method: "POST" }),
   complete: (id: string, reviewer: string, edits: Edit[]) =>
