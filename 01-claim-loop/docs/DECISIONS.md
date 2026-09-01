@@ -347,7 +347,8 @@ than something left standing.
 
 ### Facts that constrain this decision
 
-- Cloud SQL runs **PostgreSQL 16**, matching `docker-compose.yml` exactly.
+- Cloud SQL runs **PostgreSQL 18**, matched by `docker-compose.yml`'s local
+  profile. Keeping those equal is what stops works-here-breaks-there.
   `gen_random_uuid()`, `make_interval`, `JSONB`, partial indexes and
   `FOR UPDATE SKIP LOCKED` are all standard and all available.
 - No superuser, but `cloudsqlsuperuser` can create roles — enough for the

@@ -356,7 +356,7 @@ FROM claims WHERE status = 'submitted' GROUP BY status;
 | Layer | Choice |
 |---|---|
 | Runtime | Python 3.12+, `uv` |
-| Database | **Cloud SQL for PostgreSQL 16**, reached through the Cloud SQL Auth Proxy. A throwaway local Postgres is available behind a compose profile |
+| Database | **Cloud SQL for PostgreSQL 18**, reached through the Cloud SQL Auth Proxy. A throwaway local Postgres is available behind a compose profile |
 | Driver | `psycopg[binary,pool]` — psycopg 3, raw SQL, no ORM |
 | Migrations | numbered `.sql` in `migrations/`, applied by a runner in `src/` |
 | Queue | the `claims` table |
@@ -458,7 +458,7 @@ a pooler (PgBouncer, or Cloud SQL's built-in) in front.
 
 This is nearly impossible to feel locally, where you only ever run one process.
 
-**Database:** Cloud SQL for PostgreSQL 16 — the same version as
+**Database:** Cloud SQL for PostgreSQL 18 — the same version as
 `docker-compose.yml`, so nothing in `migrations/` or `src/` changes. Only
 `DATABASE_URL` does, and through the Cloud SQL connector it is a unix socket
 rather than a host and port:
@@ -524,7 +524,8 @@ while building the queue, that's drift.
 │   ├── DECISIONS.md   considered, chosen, why, and what changed my mind
 │   ├── LIMITS.md      what breaks at scale, and what I'd do about it
 │   ├── ESTIMATE.md    what it costs to build — money and evenings
-│   └── RUN.md         every command: local, experiments, GCP
+│   ├── RUN.md         every command: local, experiments, GCP
+│   └── GCP_ONBOARDING.md   standing up the database from a fresh account
 ├── dataset/           18 synthetic claim PDFs + ground-truth JSON
 ├── migrations/        numbered .sql, applied in order
 └── src/claim_loop/

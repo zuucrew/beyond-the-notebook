@@ -35,7 +35,7 @@ click **ENABLE API** and wait about thirty seconds.
 |---|---|---|
 | Instance ID | `claim-loop-db` | |
 | Password | set one for the `postgres` user | **Save it now.** This is the admin account, not the one the app uses |
-| Database version | **PostgreSQL 16** | matches the local profile exactly |
+| Database version | **PostgreSQL 18** | must match the local profile, or you get works-here-breaks-there |
 | Cloud SQL edition | **Enterprise** | not Enterprise Plus |
 | Preset | **Sandbox** | the cheapest configuration |
 | Region | `australia-southeast1` | Sydney. Keep everything in one region |
