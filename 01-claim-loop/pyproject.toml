@@ -9,6 +9,7 @@ dependencies = [
     "rich>=13",
     "openai>=1.40",
     "pymupdf>=1.24",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]

@@ -103,8 +103,10 @@ createdb claimloop
 ```
 
 ```bash
-echo 'DATABASE_URL=postgresql:///claimloop' >> .env
+cp .env.example .env   # then fill in GROQ_API_KEY
 ```
+
+Parameters — model, thresholds, pool sizes — are in `config.yml`, not `.env`.
 
 ```bash
 uv sync

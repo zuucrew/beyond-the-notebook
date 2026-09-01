@@ -398,16 +398,31 @@ docker compose run --rm app work --once
 docker compose run --rm app review
 ```
 
-**Config** — `.env`, gitignored, never committed. See `.env.example`:
+### Configuration
 
-| Variable | Default | What it does |
+Two files, deliberately separated:
+
+| | Holds | Committed? |
 |---|---|---|
-| `DATABASE_URL` | `postgresql:///claimloop` | Postgres connection |
-| `CONFIDENCE_THRESHOLD` | `0.80` | Below this, a field goes to a human |
-| `LEASE_SECONDS` | `900` | How long a worker or reviewer holds a claim |
-| `MAX_ATTEMPTS` | `3` | Attempts before `extraction_failed` |
-| `DB_POOL_MAX` | `5` | Pool size per process — see the deploy note below |
-| `GROQ_API_KEY` | — | Only once a real model replaces the stub |
+| **`config.yml`** | Parameters — thresholds, model, pool sizes, timeouts | **yes** |
+| **`.env`** | Secrets — `DATABASE_URL`, `GROQ_API_KEY` | **never** |
+
+A tuning change belongs in `config.yml`, where it shows up in a diff and can be
+argued with in review. An environment variable that nobody can trace the origin
+of is not configuration, it is folklore.
+
+`config.yml` has a `default` section plus named profiles merged over it when
+`APP_ENV` is set — so `pool_max` can differ between a laptop and Cloud Run
+without becoming an environment variable:
+
+```yaml
+default:
+  database:
+    pool_max: 5
+production:
+  database:
+    pool_max: 2
+```
 
 ---
 
@@ -503,6 +518,8 @@ while building the queue, that's drift.
 ```
 01-claim-loop/
 ├── README.md          this file
+├── config.yml         parameters — committed
+├── .env               secrets — gitignored
 ├── docs/
 │   ├── DECISIONS.md   considered, chosen, why, and what changed my mind
 │   ├── LIMITS.md      what breaks at scale, and what I'd do about it

@@ -36,20 +36,12 @@ services:
       db:
         condition: service_healthy
     environment:
+      # Secrets and environment selection only. Every parameter — thresholds,
+      # model, pool size, dpi — lives in config.yml.
       # 'db' is the service name; compose resolves it on the internal network.
       DATABASE_URL: postgresql://claim:claim@db:5432/claimloop
-      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.80}
-      LEASE_SECONDS: ${LEASE_SECONDS:-900}
-      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
-      DB_POOL_MIN: ${DB_POOL_MIN:-1}
-      DB_POOL_MAX: ${DB_POOL_MAX:-5}
-      # Read from .env by compose interpolation. Not baked into the image.
-      EXTRACTOR: ${EXTRACTOR:-groq}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
-      GROQ_MODEL: ${GROQ_MODEL:-qwen2.5-vl-72b-instruct}
-      PDF_DPI: ${PDF_DPI:-150}
-      MAX_PAGES: ${MAX_PAGES:-8}
+      APP_ENV: ${APP_ENV:-}
     volumes:
       - ./dataset:/app/dataset:ro
     command: ["work"]

@@ -4,7 +4,7 @@ Routing is a pure function of the extraction result. That is why there is no
 'extracted' state in the database -- extraction and routing commit together, so
 a claim is never parked in a state nothing queries.
 """
-from ..config import CONFIDENCE_THRESHOLD
+from ..config import ALWAYS_ESCALATE, CONFIDENCE_THRESHOLD
 
 # Present in the mandatory_only and gaps dataset variants. In a multi-form
 # system this moves into a template table (D-012); with one form type it is a
@@ -25,18 +25,9 @@ MANDATORY_FIELDS = {
     "contact_phone",
 }
 
-# Escalated regardless of how confident the model claims to be.
-#
-# The source documents use DD/MM/YYYY. 03/04/2025 is genuinely ambiguous, and a
-# model reading it as March 4th will be *confidently* wrong -- which is exactly
-# the case a confidence threshold cannot catch. When a field's failure mode is
-# invisible to your uncertainty signal, escalate it unconditionally.
-ALWAYS_ESCALATE = {
-    "date_of_birth",
-    "date_of_disability",
-    "date_last_worked",
-    "signature_date",
-}
+# ALWAYS_ESCALATE and CONFIDENCE_THRESHOLD come from config.yml -- they are
+# tuning decisions that change without a code change. MANDATORY_FIELDS stays
+# here because it describes the form itself, not a policy about it.
 
 
 def route(extracted: dict[str, dict]) -> tuple[str, list[str]]:

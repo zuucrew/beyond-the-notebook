@@ -34,6 +34,8 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY src ./src
 COPY migrations ./migrations
+# Parameters ship with the image. Secrets never do.
+COPY config.yml ./config.yml
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1

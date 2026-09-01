@@ -1,15 +1,33 @@
-"""Configuration, read from .env or the environment.
+"""Configuration.
 
-No pydantic-settings, no framework. A .env parser is fifteen lines and this way
-you can see exactly what is being read.
+Two sources, deliberately separated:
+
+  config.yml   parameters — thresholds, model names, pool sizes, timeouts.
+               Committed, so a change appears in a diff and can be reviewed.
+
+  .env         secrets — API keys and connection strings. Gitignored, never
+               in an image layer, never in a diff.
+
+Mixing them means either secrets end up in version control, or every tuning
+change becomes an environment variable nobody can find the origin of.
+
+A named profile in config.yml is merged over `default` when APP_ENV is set, so
+values that must differ between a laptop and a deployment do so without
+becoming environment variables.
 """
 import os
 from pathlib import Path
 
+import yaml
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+DATASET_DIR = PROJECT_ROOT / "dataset"
+MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
 
 
 def _load_dotenv() -> None:
+    """Secrets only. Fifteen lines, so you can see exactly what is read."""
     env_file = PROJECT_ROOT / ".env"
     if not env_file.exists():
         return
@@ -22,67 +40,52 @@ def _load_dotenv() -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+def _merge(base: dict, over: dict) -> dict:
+    out = dict(base)
+    for key, value in over.items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = _merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
+
+def _load_yaml() -> dict:
+    raw = yaml.safe_load((PROJECT_ROOT / "config.yml").read_text()) or {}
+    cfg = raw.get("default", {})
+    profile = os.environ.get("APP_ENV")
+    if profile:
+        if profile not in raw:
+            raise ValueError(f"APP_ENV={profile!r} has no section in config.yml")
+        cfg = _merge(cfg, raw[profile])
+    return cfg
+
+
 _load_dotenv()
-
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql:///claimloop"
-)
-
-DATASET_DIR = PROJECT_ROOT / "dataset"
-MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
-
-# D-007. A number chosen to be argued with, not defended.
-CONFIDENCE_THRESHOLD = float(os.environ.get("CONFIDENCE_THRESHOLD", "0.80"))
-
-# How long a worker or reviewer may hold a claim before it is handed to someone
-# else. Short enough that abandoned work recovers quickly, long enough that a
-# reviewer mid-form does not get robbed. 15 minutes is a guess; measure it.
-LEASE_SECONDS = int(os.environ.get("LEASE_SECONDS", "900"))
-
-# After this many attempts a claim goes to extraction_failed rather than being
-# retried forever. This is what stops a poison document looping.
-MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "3"))
-
-# Connection pool size, per process.
-#
-# This is the number that breaks a serverless deployment. Cloud Run runs N
-# instances, each holding its own pool, and Cloud SQL enforces a hard
-# max_connections tied to instance size -- roughly 25-50 on the smallest tiers:
-#
-#     instances x DB_POOL_MAX  <=  max_connections
-#
-# Twenty instances at 5 is a hundred connections against a limit of fifty, and
-# the app fails from traffic rather than from a bug. On serverless the usual
-# answer is 1 or 2, because an instance serves one request at a time anyway.
-#
-# Configuration, not code, so local and production differ without a rebuild --
-# and so the arithmetic sits somewhere you can see it.
-DB_POOL_MIN = int(os.environ.get("DB_POOL_MIN", "1"))
-DB_POOL_MAX = int(os.environ.get("DB_POOL_MAX", "5"))
+_cfg = _load_yaml()
 
 # ---------------------------------------------------------------------------
-# extraction
+# secrets — environment only
 # ---------------------------------------------------------------------------
 
-# Which extractor the worker uses: "stub" reads the ground-truth JSON beside
-# each PDF and corrupts it deterministically; "groq" actually reads the pages.
-EXTRACTOR = os.environ.get("EXTRACTOR", "groq")
-
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///claimloop")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
-# Groq speaks the OpenAI wire format, so the openai SDK works against it
-# unchanged -- only base_url differs. Point this at OpenRouter or anywhere else
-# OpenAI-compatible and nothing in the code changes.
-GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+# ---------------------------------------------------------------------------
+# parameters — config.yml only
+# ---------------------------------------------------------------------------
 
-# Verify against Groq's current catalogue before trusting this default -- model
-# ids move, and vision-capable models are a smaller list than text ones.
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen2.5-vl-72b-instruct")
+CONFIDENCE_THRESHOLD: float = float(_cfg["routing"]["confidence_threshold"])
+ALWAYS_ESCALATE: set[str] = set(_cfg["routing"]["always_escalate"])
 
-# Rasterisation resolution. Higher reads small print better and costs more
-# image tokens; image tokens scale with pixel area, so 200 is roughly twice
-# the cost of 140. Measure before raising it.
-PDF_DPI = int(os.environ.get("PDF_DPI", "150"))
+LEASE_SECONDS: int = int(_cfg["queue"]["lease_seconds"])
+MAX_ATTEMPTS: int = int(_cfg["queue"]["max_attempts"])
 
-# Cap pages per document. A 40-page pack at 150 DPI is a lot of image tokens.
-MAX_PAGES = int(os.environ.get("MAX_PAGES", "8"))
+DB_POOL_MIN: int = int(_cfg["database"]["pool_min"])
+DB_POOL_MAX: int = int(_cfg["database"]["pool_max"])
+
+EXTRACTOR: str = _cfg["extraction"]["provider"]
+GROQ_BASE_URL: str = _cfg["extraction"]["base_url"]
+GROQ_MODEL: str = _cfg["extraction"]["model"]
+PDF_DPI: int = int(_cfg["extraction"]["pdf_dpi"])
+MAX_PAGES: int = int(_cfg["extraction"]["max_pages"])

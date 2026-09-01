@@ -13,8 +13,14 @@ from rich.console import Console
 from rich.table import Table
 
 from ...application import extraction_service
-from ...config import CONFIDENCE_THRESHOLD, DATASET_DIR, LEASE_SECONDS, PROJECT_ROOT
-from ...domain.routing import ALWAYS_ESCALATE, MANDATORY_FIELDS, fields_needing_review
+from ...config import (
+    ALWAYS_ESCALATE,
+    CONFIDENCE_THRESHOLD,
+    DATASET_DIR,
+    LEASE_SECONDS,
+    PROJECT_ROOT,
+)
+from ...domain.routing import MANDATORY_FIELDS, fields_needing_review
 from ..db import claims_repository as repo, migrate
 
 app = typer.Typer(add_completion=False, help="Human-in-the-loop claims processing.")
