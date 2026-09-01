@@ -81,28 +81,72 @@ Left menu → **Users** → **ADD USER ACCOUNT**.
 This is the account the application uses. Keep it separate from `postgres` — the
 app has no business holding admin rights.
 
-### 7 · A service account for the proxy
+### 7 · Choose how you connect
 
-The proxy needs to prove who it is. Doing that without the CLI means a key file.
+Many organisations enforce `iam.disableServiceAccountKeyCreation`, so a
+downloaded key file is not an option — and that is a good policy, not an
+obstacle. Leaked service account keys are one of the most common causes of cloud
+breaches. **Do not ask an admin to disable it.**
 
-**Hamburger menu → IAM & Admin → Service Accounts → CREATE SERVICE ACCOUNT.**
+Two alternatives. Both are fine for this project.
 
-- Name: `claim-loop-local`
-- **CREATE AND CONTINUE**
-- **Grant this service account access** → role **Cloud SQL Client**
-- **CONTINUE → DONE**
+#### Option A — Authorised networks. No CLI, no keys.
 
-Now click the service account you just made → **KEYS** tab → **ADD KEY → Create
-new key → JSON → CREATE**. A file downloads.
+Find your public IP: search "what is my IP", or visit `ifconfig.me`.
 
-Move it into the project folder and name it exactly `gcp-key.json`:
+**SQL → your instance → Connections → Networking → ADD A NETWORK.**
+
+- Name: `my-laptop`
+- Network: `YOUR.IP.ADDRESS/32`
+- **DONE**, then **SAVE**
+
+`DATABASE_URL` then points at the instance's **Public IP address**, shown on the
+overview page:
 
 ```
-01-claim-loop/gcp-key.json
+DATABASE_URL=postgresql://claim:PASSWORD@34.87.x.x:5432/claimloop
 ```
 
-It is gitignored. **It is a private key — treat it like a password.** Anyone with
-it can reach your database.
+No proxy service, no credentials file, nothing to install.
+
+The trade: your home IP changes, and you will have to come back and update it.
+The instance is reachable from that IP over the internet — still password
+protected and TLS encrypted, but reachable. Acceptable for synthetic data over a
+week; **not** what the TPD design permits, since §2.4 requires no public
+data-plane access at all.
+
+#### Option B — The Auth Proxy with your own identity. One CLI command.
+
+```bash
+gcloud auth application-default login
+```
+
+A browser opens, you log in as yourself, and credentials are written to
+`~/.config/gcloud/application_default_credentials.json`. **No service account
+key is created**, so the org policy is satisfied — this is precisely the "more
+secure alternative" the error message points at.
+
+Your user needs the **Cloud SQL Client** role. If it does not have it, from the
+admin account: **IAM & Admin → IAM → Grant Access →** your working email →
+role **Cloud SQL Client**.
+
+Then:
+
+```bash
+docker compose --profile proxy up -d cloudsql-proxy
+```
+
+and `DATABASE_URL` uses the proxy hostname:
+
+```
+DATABASE_URL=postgresql://claim:PASSWORD@cloudsql-proxy:5432/claimloop
+```
+
+Works from any network, no IP to maintain, nothing on disk that is worth
+stealing.
+
+**Take Option B if you have gcloud installed.** Take Option A if you genuinely
+want zero CLI.
 
 ### 8 · Write .env
 
@@ -113,8 +157,13 @@ cp .env.example .env
 Fill in three lines:
 
 ```
-CLOUDSQL_INSTANCE=my-project-123:australia-southeast1:claim-loop-db
-DATABASE_URL=postgresql://claim:THE_PASSWORD_FROM_STEP_6@cloudsql-proxy:5432/claimloop
+# Option A -- authorised networks, straight at the public IP:
+DATABASE_URL=postgresql://claim:THE_PASSWORD@34.87.x.x:5432/claimloop
+
+# Option B -- through the proxy:
+CLOUDSQL_INSTANCE=my-project-123:us-central1:claim-loop-db
+DATABASE_URL=postgresql://claim:THE_PASSWORD@cloudsql-proxy:5432/claimloop
+
 GROQ_API_KEY=...
 ```
 

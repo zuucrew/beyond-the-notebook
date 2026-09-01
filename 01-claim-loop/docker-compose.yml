@@ -1,45 +1,43 @@
-# Cloud SQL is the database. The proxy makes it reachable from here.
+# Cloud SQL is the database. Two ways to reach it, both fine:
 #
-# The Cloud SQL Auth Proxy authenticates with your own gcloud credentials and
-# opens a local port that tunnels to the instance. Nothing is exposed to the
-# internet, no IP allowlisting, and DATABASE_URL is an ordinary Postgres URL --
-# so the application cannot tell the difference between this and a local server.
+#   1. Authorised networks -- add your IP in the Console, then DATABASE_URL
+#      points straight at the instance's public IP. No proxy, no CLI, no keys.
 #
-#   docker compose up -d cloudsql-proxy
+#   2. Cloud SQL Auth Proxy -- IP-independent and IAM-authenticated. Needs
+#      `gcloud auth application-default login` once, then:
+#        docker compose --profile proxy up -d cloudsql-proxy
+#
 #   docker compose run --rm app migrate-up
 #   docker compose run --rm app submit
 #   docker compose up app
 #
-# Offline, with a throwaway local Postgres instead:
-#
+# Offline, with a throwaway local Postgres on port 5433:
 #   docker compose --profile local up -d db
-#   DATABASE_URL=postgresql://claim:claim@db:5432/claimloop docker compose run --rm app status
 
 services:
+  # Only needed if you connect through the Cloud SQL Auth Proxy.
+  #   docker compose --profile proxy up -d cloudsql-proxy
+  #
+  # Not needed at all if you added your IP to the instance's authorised
+  # networks and DATABASE_URL points straight at its public IP.
   cloudsql-proxy:
+    profiles: ["proxy"]
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
     command:
       - "--address=0.0.0.0"
       - "--port=5432"
-      - "${CLOUDSQL_INSTANCE}"
+      - "${CLOUDSQL_INSTANCE:-}"
     volumes:
-      # A service account key, read-only. Create it entirely in the Console:
-      #   IAM & Admin -> Service Accounts -> Create -> role "Cloud SQL Client"
-      #   -> Keys -> Add Key -> JSON, then save it here as gcp-key.json.
+      # Your own gcloud credentials, created once by:
+      #   gcloud auth application-default login
       #
-      # If you would rather use your own gcloud login, set GCP_CREDENTIALS_FILE
-      # to ~/.config/gcloud/application_default_credentials.json instead.
-      - ${GCP_CREDENTIALS_FILE:-./gcp-key.json}:/creds.json:ro
+      # NOT a service account key -- many organisations block those outright
+      # (iam.disableServiceAccountKeyCreation), and rightly so.
+      - ${GCP_CREDENTIALS_FILE:-${HOME}/.config/gcloud/application_default_credentials.json}:/creds.json:ro
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /creds.json
     ports:
-      # So psql on the host can reach it too.
       - "5432:5432"
-    healthcheck:
-      test: ["CMD", "/cloud-sql-proxy", "--version"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   # Optional. Only starts with --profile local, for working offline or for
   # throwing the whole database away and starting again.
@@ -62,9 +60,8 @@ services:
 
   app:
     build: .
-    depends_on:
-      cloudsql-proxy:
-        condition: service_started
+    # No depends_on: the app only needs DATABASE_URL to resolve, and how it
+    # resolves -- proxy, public IP, or the local profile -- is your choice.
     environment:
       # Secrets and environment selection only. Every parameter -- thresholds,
       # model, pool size, dpi -- lives in config.yml.
