@@ -8,52 +8,135 @@ Every command for this project, in one place. Local first, GCP at the bottom.
 
 ---
 
-## Setting up Cloud SQL — do this first
+## Setting up Cloud SQL — entirely in the Console
 
-The database is Cloud SQL, not a container. You connect to it from your laptop
-through the Cloud SQL Auth Proxy, which authenticates with your own gcloud
-credentials and opens a local port. Nothing is exposed to the internet and there
-is no IP allowlist to maintain.
+No CLI. Console labels shift between releases; the navigation paths are stable.
 
-**Six things, once.**
+### 1 · Project and billing
 
-1. A GCP project with billing enabled.
+Go to **console.cloud.google.com**. Use the project dropdown in the blue bar at
+the top to create or select a project.
 
-2. Enable the API — **APIs & Services → Library → Cloud SQL Admin API → Enable**,
-   or:
+**Billing → Link a billing account.** Cloud SQL will not create without it, even
+on free credit.
 
-```bash
-gcloud services enable sqladmin.googleapis.com
+### 2 · Open Cloud SQL
+
+Hamburger menu, top left → scroll to **Databases → SQL**.
+
+Click **CREATE INSTANCE**, then **Choose PostgreSQL**.
+
+If a panel appears asking to enable the Compute Engine or Cloud SQL Admin API,
+click **ENABLE API** and wait about thirty seconds.
+
+### 3 · Configure the instance
+
+| Field | Value | Why |
+|---|---|---|
+| Instance ID | `claim-loop-db` | |
+| Password | set one for the `postgres` user | **Save it now.** This is the admin account, not the one the app uses |
+| Database version | **PostgreSQL 16** | matches the local profile exactly |
+| Cloud SQL edition | **Enterprise** | not Enterprise Plus |
+| Preset | **Sandbox** | the cheapest configuration |
+| Region | `australia-southeast1` | Sydney. Keep everything in one region |
+| Zonal availability | **Single zone** | "Multiple zones" is HA — it doubles the bill and teaches nothing here |
+
+Expand **SHOW CONFIGURATION OPTIONS** and check two things:
+
+- **Storage** — SSD, **10 GB**. Leave automatic storage increases on; it prevents
+  an outage and costs nothing until it triggers.
+- **Connections** — **Public IP** ticked, Private IP unticked. Public IP does not
+  mean open to the internet: nothing can connect without credentials, and the
+  proxy authenticates through IAM.
+
+Click **CREATE INSTANCE**. It takes **five to ten minutes.**
+
+### 4 · Copy the connection name
+
+When it finishes, you land on the instance overview. Find **Connection name** —
+it looks like:
+
+```
+my-project-123:australia-southeast1:claim-loop-db
 ```
 
-3. Create the instance — **SQL → Create Instance → PostgreSQL**. Version 16,
-   Enterprise, **Sandbox** preset, region `australia-southeast1`, **Single zone**
-   (multiple zones is HA and doubles the bill), 10 GB SSD. Or:
+There is a copy icon next to it. You need this twice.
 
-```bash
-gcloud sql instances create claim-loop-db --database-version=POSTGRES_16 --tier=db-f1-micro --region=australia-southeast1 --storage-size=10GB
+### 5 · Create the database
+
+Left menu inside the instance → **Databases** → **CREATE DATABASE**.
+
+Name it `claimloop`. Leave character set and collation alone. **CREATE.**
+
+### 6 · Create the application's user
+
+Left menu → **Users** → **ADD USER ACCOUNT**.
+
+- **Built-in authentication**
+- Username `claim`
+- Set a password and save it
+
+**ADD.**
+
+This is the account the application uses. Keep it separate from `postgres` — the
+app has no business holding admin rights.
+
+### 7 · A service account for the proxy
+
+The proxy needs to prove who it is. Doing that without the CLI means a key file.
+
+**Hamburger menu → IAM & Admin → Service Accounts → CREATE SERVICE ACCOUNT.**
+
+- Name: `claim-loop-local`
+- **CREATE AND CONTINUE**
+- **Grant this service account access** → role **Cloud SQL Client**
+- **CONTINUE → DONE**
+
+Now click the service account you just made → **KEYS** tab → **ADD KEY → Create
+new key → JSON → CREATE**. A file downloads.
+
+Move it into the project folder and name it exactly `gcp-key.json`:
+
+```
+01-claim-loop/gcp-key.json
 ```
 
-4. Inside the instance: **Databases → Create Database** `claimloop`, then
-   **Users → Add User Account** `claim` with a password you keep.
+It is gitignored. **It is a private key — treat it like a password.** Anyone with
+it can reach your database.
 
-5. Authenticate your laptop so the proxy can use your credentials:
-
-```bash
-gcloud auth application-default login
-```
-
-6. Copy the **connection name** from the instance overview — it looks like
-   `project:region:claim-loop-db` — and write `.env`:
+### 8 · Write .env
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in `CLOUDSQL_INSTANCE`, the password in `DATABASE_URL`, and `GROQ_API_KEY`.
+Fill in three lines:
 
-**Delete the instance when you are done with it.** It is the only thing that
-bills while idle.
+```
+CLOUDSQL_INSTANCE=my-project-123:australia-southeast1:claim-loop-db
+DATABASE_URL=postgresql://claim:THE_PASSWORD_FROM_STEP_6@cloudsql-proxy:5432/claimloop
+GROQ_API_KEY=...
+```
+
+### 9 · Check it before touching the app
+
+**SQL → your instance → Cloud SQL Studio** in the left menu. Sign in as `claim`
+with the password from step 6, database `claimloop`, and run:
+
+```sql
+SELECT version();
+```
+
+If that returns, the database, the user and the password are all correct — and
+anything that fails next is the proxy or the app, not Cloud SQL.
+
+### 10 · Stop it when you are not using it
+
+**SQL → instance → STOP** at the top of the overview page. Storage still bills,
+about 50 cents a week; compute does not. **START** brings it back in a minute.
+
+**DELETE INSTANCE** when the project is finished. It asks you to type the
+instance name, which is the point.
 
 ---
 

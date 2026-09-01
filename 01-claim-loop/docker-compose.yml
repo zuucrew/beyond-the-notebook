@@ -23,9 +23,13 @@ services:
       - "--port=5432"
       - "${CLOUDSQL_INSTANCE}"
     volumes:
-      # Your own gcloud credentials, read-only. Created by:
-      #   gcloud auth application-default login
-      - ${HOME}/.config/gcloud/application_default_credentials.json:/creds.json:ro
+      # A service account key, read-only. Create it entirely in the Console:
+      #   IAM & Admin -> Service Accounts -> Create -> role "Cloud SQL Client"
+      #   -> Keys -> Add Key -> JSON, then save it here as gcp-key.json.
+      #
+      # If you would rather use your own gcloud login, set GCP_CREDENTIALS_FILE
+      # to ~/.config/gcloud/application_default_credentials.json instead.
+      - ${GCP_CREDENTIALS_FILE:-./gcp-key.json}:/creds.json:ro
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /creds.json
     ports:
