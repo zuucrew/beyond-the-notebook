@@ -251,12 +251,22 @@ means a second run takes different claims:
 gcloud scheduler jobs create http claim-loop-worker-tick --location=$REGION --schedule="*/2 * * * *" --uri="https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT/jobs/claim-loop-worker:run" --http-method=POST --oauth-service-account-email=$(gcloud config get-value account)
 ```
 
-`--max-instances` caps the connection arithmetic: instances x `DB_POOL_MAX` must
-stay under the database's `max_connections`, which is roughly 25-50 on this tier.
+### There is no service to deploy — yet
+
+A Cloud Run **Service** must listen for HTTP on `$PORT`. This project's only
+entrypoint is a Typer CLI, so a Service would fail its health check and never
+go healthy.
+
+**Deploy Jobs only.** A Service appears when there is a FastAPI layer to put in
+it, and then this is the shape:
 
 ```bash
-gcloud run deploy claim-loop-api --source . --region=$REGION --max-instances=10 --set-cloudsql-instances=$PROJECT:$REGION:$INSTANCE --set-secrets=DATABASE_URL=claim-loop-db-url:latest --set-env-vars=DB_POOL_MAX=2
+# only once an HTTP entrypoint exists
+gcloud run deploy claim-loop-api --source . --region=$REGION --max-instances=10 --set-cloudsql-instances=$PROJECT:$REGION:$INSTANCE --set-secrets=DATABASE_URL=claim-loop-db-url:latest --set-env-vars=APP_ENV=production
 ```
+
+`--max-instances` is what caps the connection arithmetic: instances x
+`pool_max` must stay under the database's `max_connections`.
 
 ---
 
@@ -327,7 +337,11 @@ Two ways round it, both Console-friendly afterwards:
   Console every time after. Needs `gcloud auth configure-docker` once — one CLI
   command, then never again.
 
-### 6 · Cloud Run service
+### 6 · Cloud Run service — skip this for now
+
+Only relevant once the project has an HTTP entrypoint. A Service must answer on
+`$PORT`; the CLI does not. Go to Jobs.
+
 
 **Cloud Run → Create Service**, pick the image or repository from step 5, then:
 
@@ -427,10 +441,6 @@ Then delete the thing that bills:
 
 ```bash
 gcloud sql instances delete $INSTANCE
-```
-
-```bash
-gcloud run services delete claim-loop-api --region=$REGION
 ```
 
 ```bash
