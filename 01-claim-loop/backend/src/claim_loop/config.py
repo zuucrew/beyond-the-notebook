@@ -28,7 +28,9 @@ MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
 
 def _load_dotenv() -> None:
     """Secrets only. Fifteen lines, so you can see exactly what is read."""
-    env_file = PROJECT_ROOT / ".env"
+    # .env sits at the repository root, one level above the backend, because
+    # the frontend and compose read it too.
+    env_file = PROJECT_ROOT.parent / ".env"
     if not env_file.exists():
         return
     for line in env_file.read_text().splitlines():

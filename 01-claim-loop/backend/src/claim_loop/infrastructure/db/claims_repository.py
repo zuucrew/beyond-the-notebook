@@ -303,6 +303,18 @@ def stuck_claims(older_than: str = "1 hour") -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def claims_by_status(status: str, limit: int = 50) -> list[dict]:
+    with transaction() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, form_code, storage_uri, status, attempt_count, updated_at
+            FROM claims WHERE status = %s ORDER BY created_at LIMIT %s
+            """,
+            (status, limit),
+        ).fetchall()
+    return [{**r, "id": str(r["id"])} for r in rows]
+
+
 def get_claim(claim_id: str) -> dict | None:
     with transaction() as conn:
         row = conn.execute("SELECT * FROM claims WHERE id = %s", (claim_id,)).fetchone()

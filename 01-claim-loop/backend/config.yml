@@ -45,16 +45,18 @@ default:
     pool_max: 5
 
   extraction:
-    # "groq" reads the PDF for real. "stub" reads the ground-truth JSON beside
-    # it and corrupts it deterministically — free, offline, repeatable.
-    provider: groq
+    # "api" reads the PDF for real through any OpenAI-compatible endpoint.
+    # "stub" reads the ground-truth JSON beside it and corrupts it
+    # deterministically — free, offline, repeatable.
+    provider: api
 
-    # Any OpenAI-compatible endpoint. OpenRouter works here unchanged.
-    base_url: https://api.groq.com/openai/v1
+    # OpenRouter. Groq, Together, vLLM and OpenAI all work here unchanged;
+    # only this URL and the model below differ.
+    base_url: https://openrouter.ai/api/v1
 
-    # Verify against the provider's current catalogue: model ids move, and the
-    # vision-capable list is shorter than the text one.
-    model: qwen2.5-vl-72b-instruct
+    # Must be vision-capable: these PDFs are scanned images with no text layer.
+    # Groq serves no vision model at all, which is why this is not pointed there.
+    model: qwen/qwen3-vl-32b-instruct
 
     # Image tokens scale with pixel area, so dpi and page count are both direct
     # cost levers. 200 dpi is roughly twice the cost of 140.

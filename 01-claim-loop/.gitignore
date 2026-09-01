@@ -5,10 +5,14 @@ venv/
 .env
 
 # Service account private keys. Never commit these.
-*.json.key
 gcp-key.json
 *-key.json
+
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+
+# frontend
+node_modules/
+dist/

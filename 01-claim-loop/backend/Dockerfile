@@ -45,7 +45,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 RUN useradd --create-home --uid 1000 app && chown -R app:app /app
 USER app
 
-# dataset/ is mounted, not copied: it changes often and does not belong in an
+# dataset/ is mounted from ./backend/dataset, not copied: it changes often and does not belong in an
 # image. In production it is object storage anyway (see README, Document storage).
 
 ENTRYPOINT ["claim-loop"]
