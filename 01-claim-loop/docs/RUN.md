@@ -260,6 +260,131 @@ gcloud run deploy claim-loop-api --source . --region=$REGION --max-instances=10 
 
 ---
 
+## GCP — the same thing in the Console
+
+Everything above except one step can be clicked. Console labels move between
+releases; the navigation paths are stable, the button captions less so.
+
+### 1 · Enable the APIs
+
+**APIs & Services → Library** — search and **Enable** each of: Cloud SQL Admin,
+Cloud Run Admin, Artifact Registry, Secret Manager, Cloud Build, Cloud Scheduler.
+
+### 2 · Cloud SQL instance
+
+**SQL → Create Instance → PostgreSQL**
+
+| Setting | Value |
+|---|---|
+| Instance ID | `claim-loop-db` |
+| Database version | PostgreSQL 16 |
+| Edition | Enterprise |
+| Preset | Sandbox — the cheapest shared-core |
+| Region | `australia-southeast1` |
+| Zonal availability | **Single zone** — "Multiple zones" is HA and doubles the bill |
+| Storage | 10 GB SSD |
+| Connections | Public IP (default) |
+
+Then inside the instance:
+
+- **Databases → Create Database** → `claimloop`
+- **Users → Add User Account** → built-in authentication → user `claim`, set a password
+
+Copy the **connection name** from the instance overview — it looks like
+`project:region:claim-loop-db`. You need it in the next step.
+
+### 3 · The connection string as a secret
+
+**Security → Secret Manager → Create Secret**
+
+Name `claim-loop-db-url`, and paste as the value:
+
+```
+postgresql://claim:YOUR_PASSWORD@/claimloop?host=/cloudsql/PROJECT:REGION:claim-loop-db
+```
+
+No host and port — the Cloud SQL connector mounts a unix socket, so the host is
+a filesystem path.
+
+### 4 · Bucket
+
+**Cloud Storage → Buckets → Create.** Region `australia-southeast1`, uniform
+bucket-level access on.
+
+### 5 · The step the Console cannot do
+
+**Cloud Run needs a container image, and the Console cannot build one from the
+folder on your laptop.** `gcloud run deploy --source .` does that; there is no
+button for it.
+
+Two ways round it, both Console-friendly afterwards:
+
+- **Connect the GitHub repo.** Cloud Run → Create Service → *Continuously deploy
+  from a repository* → Cloud Build sets up a trigger on push. Entirely clickable,
+  and note what it is: continuous deployment, which is more automation than this
+  project asked for.
+- **Push an image once from your machine**, then deploy it by tag from the
+  Console every time after. Needs `gcloud auth configure-docker` once — one CLI
+  command, then never again.
+
+### 6 · Cloud Run service
+
+**Cloud Run → Create Service**, pick the image or repository from step 5, then:
+
+- **Region** `australia-southeast1`
+- **Containers → Variables & Secrets** — add `APP_ENV` = `production`; add
+  `DATABASE_URL` as a **secret reference** to `claim-loop-db-url`, latest version
+- **Containers → Connections** (sometimes *Cloud SQL connections*) — add the
+  instance. This is what mounts the socket
+- **Revision scaling → Maximum instances** — set it. Instances x `pool_max` must
+  stay under the database's `max_connections`
+
+### 7 · Jobs
+
+**Cloud Run → Jobs tab → Create Job.** Same image, same secret, same Cloud SQL
+connection. The difference is **Arguments**:
+
+| Job | Arguments |
+|---|---|
+| `claim-loop-migrate` | `migrate-up` |
+| `claim-loop-worker` | `work`, `--once` |
+
+Run the migration job once — **Execute**, and wait for it to finish — before
+deploying the service.
+
+### 8 · Schedule the worker
+
+**Cloud Scheduler → Create Job.** Frequency `*/2 * * * *`, target **HTTP**, URL:
+
+```
+https://REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/PROJECT/jobs/claim-loop-worker:run
+```
+
+Method POST, Auth header **Add OAuth token**, with a service account that has
+Cloud Run Invoker.
+
+### 9 · Budget alert
+
+**Billing → Budgets & alerts → Create Budget.** Scope the project, amount $50.
+
+### 10 · Watching it
+
+- **Cloud Run → your service → Logs**
+- **Cloud Run → Jobs → executions** for worker runs
+- **SQL → instance → Cloud SQL Studio** for a query editor in the browser
+- **SQL → instance → Monitoring** — active connections is the graph to watch when
+  you push load and the pool arithmetic breaks
+
+### 11 · Teardown
+
+Delete in this order, each from its own Console page: Cloud Scheduler job →
+Cloud Run jobs → Cloud Run service → **SQL instance** → bucket.
+
+The SQL instance is the only one that costs money while idle. Deleting it needs
+you to type the instance name to confirm, which is the point.
+
+---
+
 ## GCP — operate
 
 A psql shell against Cloud SQL:
