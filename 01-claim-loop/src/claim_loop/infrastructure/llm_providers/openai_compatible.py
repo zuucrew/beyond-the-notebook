@@ -1,9 +1,9 @@
 """Real extraction: renders the PDF and asks a vision model to read it.
 
-Groq speaks the OpenAI wire format, so this is the `openai` SDK with a different
-base_url. Point GROQ_BASE_URL at OpenRouter or anything else OpenAI-compatible
-and nothing here changes -- which is the reason this file exists separately from
-the worker that calls it.
+Deliberately not named after a provider. Groq, OpenRouter, Together, vLLM and
+OpenAI itself all speak the same wire format, so this is the `openai` SDK with
+whatever base_url and model config.yml names. Switching provider is two lines of
+YAML and one environment variable -- no code, which is the point of the seam.
 
 Interface is identical to stub.extract: take a storage_uri, return
 {field_key: {value, confidence, source}}.
@@ -16,9 +16,9 @@ import pymupdf
 from openai import OpenAI
 
 from ...config import (
-    GROQ_API_KEY,
-    GROQ_BASE_URL,
-    GROQ_MODEL,
+    LLM_API_KEY,
+    LLM_BASE_URL,
+    LLM_MODEL,
     MAX_PAGES,
     PDF_DPI,
     PROJECT_ROOT,
@@ -31,9 +31,9 @@ _client: OpenAI | None = None
 def _get_client() -> OpenAI:
     global _client
     if _client is None:
-        if not GROQ_API_KEY:
-            raise RuntimeError("GROQ_API_KEY is not set")
-        _client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL)
+        if not LLM_API_KEY:
+            raise RuntimeError("LLM_API_KEY is not set")
+        _client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
     return _client
 
 
@@ -96,7 +96,7 @@ def extract(storage_uri: str) -> dict[str, dict]:
         })
 
     response = _get_client().chat.completions.create(
-        model=GROQ_MODEL,
+        model=LLM_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": content},

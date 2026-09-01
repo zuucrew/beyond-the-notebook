@@ -66,7 +66,7 @@ services:
       # Secrets and environment selection only. Every parameter -- thresholds,
       # model, pool size, dpi -- lives in config.yml.
       DATABASE_URL: ${DATABASE_URL}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
       APP_ENV: ${APP_ENV:-}
     volumes:
       - ./dataset:/app/dataset:ro

@@ -165,7 +165,7 @@ Fill in:
 ```
 CLOUDSQL_INSTANCE=your-project:your-region:your-instance   # Option B only
 DATABASE_URL=postgresql://USER:PASSWORD@cloudsql-proxy:5432/claimloop
-GROQ_API_KEY=your-key
+LLM_API_KEY=your-key
 ```
 
 For Option A, replace `cloudsql-proxy:5432` with the public IP and port.

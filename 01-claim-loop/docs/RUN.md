@@ -164,7 +164,7 @@ DATABASE_URL=postgresql://claim:THE_PASSWORD@34.87.x.x:5432/claimloop
 CLOUDSQL_INSTANCE=my-project-123:us-central1:claim-loop-db
 DATABASE_URL=postgresql://claim:THE_PASSWORD@cloudsql-proxy:5432/claimloop
 
-GROQ_API_KEY=...
+LLM_API_KEY=...
 ```
 
 ### 9 · Check it before touching the app
@@ -293,7 +293,7 @@ createdb claimloop
 ```
 
 ```bash
-cp .env.example .env   # then fill in GROQ_API_KEY
+cp .env.example .env   # then fill in LLM_API_KEY
 ```
 
 Parameters — model, thresholds, pool sizes — are in `config.yml`, not `.env`.

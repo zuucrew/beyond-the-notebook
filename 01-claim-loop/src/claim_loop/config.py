@@ -69,7 +69,7 @@ _cfg = _load_yaml()
 # ---------------------------------------------------------------------------
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///claimloop")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # parameters — config.yml only
@@ -85,7 +85,7 @@ DB_POOL_MIN: int = int(_cfg["database"]["pool_min"])
 DB_POOL_MAX: int = int(_cfg["database"]["pool_max"])
 
 EXTRACTOR: str = _cfg["extraction"]["provider"]
-GROQ_BASE_URL: str = _cfg["extraction"]["base_url"]
-GROQ_MODEL: str = _cfg["extraction"]["model"]
+LLM_BASE_URL: str = _cfg["extraction"]["base_url"]
+LLM_MODEL: str = _cfg["extraction"]["model"]
 PDF_DPI: int = int(_cfg["extraction"]["pdf_dpi"])
 MAX_PAGES: int = int(_cfg["extraction"]["max_pages"])

@@ -362,7 +362,7 @@ FROM claims WHERE status = 'submitted' GROUP BY status;
 | Queue | the `claims` table |
 | CLI | `typer` + `rich` |
 | Tests | `pytest` + `testcontainers[postgres]` |
-| Extraction (inc. 5) | `openai` SDK against Groq — OpenAI-compatible, Qwen VL |
+| Extraction (inc. 5) | `openai` SDK against OpenRouter — OpenAI-compatible, Qwen VL |
 | Tracing (inc. 6) | `langfuse`, Cloud free tier |
 | Deploy (inc. 10) | Cloud Run + Cloud SQL + GCS + Secret Manager |
 
@@ -405,7 +405,7 @@ Two files, deliberately separated:
 | | Holds | Committed? |
 |---|---|---|
 | **`config.yml`** | Parameters — thresholds, model, pool sizes, timeouts | **yes** |
-| **`.env`** | Secrets — `DATABASE_URL`, `GROQ_API_KEY` | **never** |
+| **`.env`** | Secrets — `DATABASE_URL`, `LLM_API_KEY` | **never** |
 
 A tuning change belongs in `config.yml`, where it shows up in a diff and can be
 argued with in review. An environment variable that nobody can trace the origin
@@ -492,7 +492,7 @@ so the commit history reads as a list of lessons. Commits are never squashed.
 | 2 | Confidence routing — auto-approve vs escalate | the cost model behind the threshold |
 | 3 | **Concurrent claiming with `SKIP LOCKED`, two workers racing** | row locking ← the real lesson |
 | 4 | Lease expiry + reaper | at-least-once, crash recovery |
-| 5 | Real extraction — Qwen VL via Groq, replacing the stub | LLM integration behind a stable seam |
+| 5 | Real extraction — Qwen VL via OpenRouter, replacing the stub | LLM integration behind a stable seam |
 | 6 | Langfuse trace on extraction, human verdict as a score | closing the feedback loop |
 | 7 | Queue depth, agreement rate, review latency | operational observability |
 | 8 | Dockerfile + compose | **L2** — containers, layers, multi-stage |

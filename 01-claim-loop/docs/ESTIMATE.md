@@ -21,7 +21,7 @@ it costs nothing at all.
 ### Adding a real extraction model
 
 The dataset is 18 documents at roughly 5 pages each; a full run is on the order
-of ~135k input tokens. Open models on Groq are cheap enough that a full pass
+of ~135k input tokens. Open vision models are cheap enough that a full pass
 costs cents, and development means running it dozens of times, not thousands.
 
 **Budget $5.** It will almost certainly come in under that.

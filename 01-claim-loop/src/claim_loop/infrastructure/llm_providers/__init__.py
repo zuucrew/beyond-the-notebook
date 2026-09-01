@@ -13,8 +13,8 @@ from ...config import EXTRACTOR
 def get_extractor():
     if EXTRACTOR == "stub":
         from .stub import extract
-    elif EXTRACTOR == "groq":
-        from .groq import extract
+    elif EXTRACTOR == "api":
+        from .openai_compatible import extract
     else:
-        raise ValueError(f"unknown EXTRACTOR {EXTRACTOR!r}; use 'stub' or 'groq'")
+        raise ValueError(f"unknown provider {EXTRACTOR!r}; use 'stub' or 'api'")
     return extract
