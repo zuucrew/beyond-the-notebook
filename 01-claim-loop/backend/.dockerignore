@@ -1,0 +1,19 @@
+# Secrets must never enter an image layer. An image is distributable; a layer
+# containing .env is a leaked key even if a later layer deletes the file.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# Mounted at runtime, not baked in.
+dataset/
+
+*.md

@@ -1,0 +1,78 @@
+# Parameters. Committed, reviewable, diffable.
+#
+# Secrets are NOT here and never should be — they live in .env, which is
+# gitignored. The split is: anything that would be embarrassing in a public
+# repository goes in the environment; everything else goes here, where a change
+# shows up in a diff and can be argued with in review.
+#
+# `default` applies everywhere. A named profile is merged over it when APP_ENV
+# is set, so values that must differ between a laptop and a serverless
+# deployment do so without becoming environment variables.
+
+default:
+  routing:
+    # Below this, a field goes to a human. A number to argue with, not defend —
+    # it should come from measured accuracy, not from looking round.
+    confidence_threshold: 0.80
+
+    # Escalated regardless of confidence. These are DD/MM/YYYY on the source
+    # forms, so a model reading 03/04/2025 as March 4th is *confidently* wrong —
+    # a failure mode the threshold cannot catch.
+    #
+    # Note what this list does: with date_of_birth present on every form, every
+    # claim escalates and confidence_threshold decides nothing at all. Narrow it
+    # or accept that this form family is human-verified.
+    always_escalate:
+      - date_of_birth
+      - date_of_disability
+      - date_last_worked
+      - signature_date
+
+  queue:
+    # How long a worker or reviewer may hold a claim before it is handed to
+    # someone else. Too short robs a reviewer mid-form; too long leaves
+    # abandoned work sitting. 15 minutes is a guess — measure it.
+    lease_seconds: 900
+
+    # Attempts before a claim goes to extraction_failed. This is what stops a
+    # poison document being retried forever at the head of the queue.
+    max_attempts: 3
+
+  database:
+    pool_min: 1
+    # instances x pool_max must stay under the database's max_connections,
+    # which is roughly 25-50 on the smallest Cloud SQL tiers.
+    pool_max: 5
+
+  extraction:
+    # "api" reads the PDF for real through any OpenAI-compatible endpoint.
+    # "stub" reads the ground-truth JSON beside it and corrupts it
+    # deterministically — free, offline, repeatable.
+    provider: api
+
+    # OpenRouter. Groq, Together, vLLM and OpenAI all work here unchanged;
+    # only this URL and the model below differ.
+    base_url: https://openrouter.ai/api/v1
+
+    # Must be vision-capable: these PDFs are scanned images with no text layer.
+    # Groq serves no vision model at all, which is why this is not pointed there.
+    model: qwen/qwen3-vl-32b-instruct
+
+    # Image tokens scale with pixel area, so dpi and page count are both direct
+    # cost levers. 200 dpi is roughly twice the cost of 140.
+    pdf_dpi: 150
+    max_pages: 8
+
+
+# APP_ENV=offline -- the stub extractor. Free, deterministic, no network.
+# Use it to exercise the queue without spending anything.
+offline:
+  extraction:
+    provider: stub
+
+
+# APP_ENV=production
+production:
+  database:
+    # Serverless runs many instances, each with its own pool.
+    pool_max: 2

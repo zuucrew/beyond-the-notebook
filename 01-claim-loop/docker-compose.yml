@@ -1,0 +1,91 @@
+# Cloud SQL is the database. Two ways to reach it:
+#
+#   1. Authorised networks -- add your IP in the Console, then DATABASE_URL
+#      points straight at the instance's public IP. No proxy, no CLI, no keys.
+#
+#   2. Cloud SQL Auth Proxy -- IP-independent and IAM-authenticated. Needs
+#      `gcloud auth application-default login` once, then:
+#        docker compose --profile proxy up -d cloudsql-proxy
+#
+#   docker compose run --rm cli migrate-up
+#   docker compose run --rm cli submit
+#   docker compose up api frontend        the browser at http://localhost:5173
+#   docker compose up worker              extraction, in the background
+#
+# Offline, with a throwaway local Postgres on port 5433:
+#   docker compose --profile local up -d db
+
+x-backend: &backend
+  build: ./backend
+  environment:
+    DATABASE_URL: ${DATABASE_URL}
+    LLM_API_KEY: ${LLM_API_KEY:-}
+    APP_ENV: ${APP_ENV:-}
+  volumes:
+    - ./backend/dataset:/app/dataset:ro
+    # Writable: uploads land here and the worker reads them back.
+    - ./backend/uploads:/app/uploads
+
+services:
+  cloudsql-proxy:
+    profiles: ["proxy"]
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+    command: ["--address=0.0.0.0", "--port=5432", "${CLOUDSQL_INSTANCE:-}"]
+    volumes:
+      - ${GCP_CREDENTIALS_FILE:-${HOME}/.config/gcloud/application_default_credentials.json}:/creds.json:ro
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /creds.json
+    ports:
+      - "5432:5432"
+
+  db:
+    profiles: ["local"]
+    image: postgres:18
+    environment:
+      POSTGRES_USER: claim
+      POSTGRES_PASSWORD: claim
+      POSTGRES_DB: claimloop
+    ports:
+      - "5433:5432"
+    volumes:
+      - claim-loop-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claim -d claimloop"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # The HTTP layer the browser talks to.
+  api:
+    <<: *backend
+    entrypoint: ["uvicorn"]
+    command: ["claim_loop.infrastructure.api.http:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+
+  # The extraction worker. Same image, different entrypoint -- one program,
+  # several processes, which is not the same thing as microservices.
+  worker:
+    <<: *backend
+    command: ["work"]
+
+  # One-off commands: migrate-up, submit, status, reap, history.
+  cli:
+    <<: *backend
+    profiles: ["cli"]
+    command: ["--help"]
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Vite reads this at dev-server start.
+      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8000}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src:ro
+    depends_on:
+      - api
+
+volumes:
+  claim-loop-db:

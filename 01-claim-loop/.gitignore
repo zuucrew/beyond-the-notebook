@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Service account private keys. Never commit these.
+gcp-key.json
+*-key.json
+
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# frontend
+node_modules/
+dist/
+
+# Uploaded documents. Content-addressed, regenerable, not source.
+backend/uploads/*
+!backend/uploads/.gitkeep

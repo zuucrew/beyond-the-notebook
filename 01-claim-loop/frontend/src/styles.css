@@ -1,0 +1,99 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --line: #262b36;
+  --text: #e6e9ef;
+  --muted: #8b93a7;
+  --accent: #4c8dff;
+  --warn: #d9a441;
+  --bad: #d9534f;
+  --good: #4bb573;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+header h1 { font-size: 15px; margin: 0; letter-spacing: .02em; }
+.counts { display: flex; gap: 14px; margin-left: auto; color: var(--muted); font-size: 13px; }
+.counts b { color: var(--text); font-weight: 600; }
+
+.split { display: grid; grid-template-columns: 1fr 460px; height: calc(100vh - 53px); }
+.doc { border-right: 1px solid var(--line); background: #0b0d11; }
+.doc iframe { width: 100%; height: 100%; border: 0; }
+.panel { overflow-y: auto; padding: 18px 20px 60px; }
+
+.field { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.field-head { display: flex; align-items: baseline; gap: 8px; }
+.key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.why { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+.conf { font-size: 11.5px; padding: 1px 6px; border-radius: 3px; }
+.conf.low { background: rgba(217,83,79,.18); color: #ff9b98; }
+.conf.mid { background: rgba(217,164,65,.18); color: var(--warn); }
+input[type="text"] {
+  width: 100%; margin-top: 7px; padding: 7px 9px;
+  background: #0d0f14; color: var(--text);
+  border: 1px solid var(--line); border-radius: 5px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+}
+input[type="text"]:focus { outline: none; border-color: var(--accent); }
+input.changed { border-color: var(--good); }
+
+.row { display: flex; gap: 8px; margin-top: 7px; }
+button {
+  padding: 6px 11px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  font-size: 12.5px;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #05070c; font-weight: 600; }
+button.blank.on { border-color: var(--warn); color: var(--warn); }
+button:disabled { opacity: .45; cursor: default; }
+
+.bar { position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--line);
+       margin: 18px -20px -60px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+.empty { padding: 60px 20px; text-align: center; color: var(--muted); }
+.err { color: var(--bad); padding: 10px 20px; }
+.muted { color: var(--muted); }
+
+/* role switch */
+.roles { display: flex; gap: 6px; }
+button.role { border-radius: 6px; padding: 6px 13px; }
+button.role.on { background: var(--accent); border-color: var(--accent); color: #05070c; font-weight: 600; }
+.badge {
+  margin-left: 7px; background: rgba(0,0,0,.28); border-radius: 9px;
+  padding: 0 6px; font-size: 11px; font-weight: 700;
+}
+button.role:not(.on) .badge { background: var(--accent); color: #05070c; }
+
+/* upload */
+.upload { max-width: 720px; margin: 42px auto; padding: 0 20px; }
+.drop {
+  border: 1.5px dashed var(--line); border-radius: 10px;
+  padding: 52px 20px; text-align: center; cursor: pointer;
+  display: flex; flex-direction: column; gap: 7px; background: var(--panel);
+}
+.drop:hover, .drop.over { border-color: var(--accent); background: #191d26; }
+.drop strong { font-size: 15px; font-weight: 600; }
+.note { font-size: 12.5px; margin-top: 16px; line-height: 1.6; }
+
+.results { width: 100%; margin-top: 22px; border-collapse: collapse; font-size: 13px; }
+.results td { padding: 7px 0; border-bottom: 1px solid var(--line); }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.tag { font-size: 11.5px; padding: 2px 7px; border-radius: 3px; }
+.tag.good { background: rgba(75,181,115,.16); color: var(--good); }
+.tag.warn { background: rgba(217,164,65,.16); color: var(--warn); }
+.tag.bad  { background: rgba(217,83,79,.18); color: #ff9b98; }
+
+.empty p { margin: 0 0 16px; }
+.empty .note { max-width: 430px; margin: 18px auto 0; }

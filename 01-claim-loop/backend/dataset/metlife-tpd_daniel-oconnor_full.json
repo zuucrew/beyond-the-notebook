@@ -1,0 +1,30 @@
+{
+  "file": "metlife-tpd_daniel-oconnor_full.pdf",
+  "persona": "daniel-oconnor",
+  "variant": "full",
+  "deliberately_missing": [],
+  "fields": {
+    "member_number": "MP-9902174",
+    "given_names": "Daniel Francis",
+    "surname": "O'Connor",
+    "date_of_birth": "31/01/1962",
+    "address_street": "77 Ipswich Road",
+    "address_suburb": "Woolloongabba",
+    "address_state": "QLD",
+    "address_postcode": "4102",
+    "diagnosis": "Severe osteoarthritis, both knees",
+    "date_of_disability": "02/02/2025",
+    "date_last_worked": "31/01/2025",
+    "signature_date": "15/06/2025",
+    "contact_phone": "0401 776 348",
+    "title": "Mr",
+    "previous_names": null,
+    "gender": "Male",
+    "email": "danoconnor62@gmail.com",
+    "date_symptoms_commenced": "05/06/2023",
+    "date_first_consulted": "21/08/2023",
+    "accident_related": "No",
+    "doctor_name": "Dr Priya Nair",
+    "doctor_specialty": "Orthopaedic surgeon"
+  }
+}

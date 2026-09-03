@@ -1,0 +1,30 @@
+{
+  "file": "metlife-tpd_grace-waqa_full.pdf",
+  "persona": "grace-waqa",
+  "variant": "full",
+  "deliberately_missing": [],
+  "fields": {
+    "member_number": "MP-6648032",
+    "given_names": "Grace Talei",
+    "surname": "Waqa",
+    "date_of_birth": "03/12/1985",
+    "address_street": "5 Kurrajong Place",
+    "address_suburb": "Blacktown",
+    "address_state": "NSW",
+    "address_postcode": "2148",
+    "diagnosis": "Major depressive disorder, treatment-resistant",
+    "date_of_disability": "25/02/2025",
+    "date_last_worked": "21/02/2025",
+    "signature_date": "18/06/2025",
+    "contact_phone": "0455 208 913",
+    "title": "Ms",
+    "previous_names": null,
+    "gender": "Female",
+    "email": "grace.waqa@hotmail.com",
+    "date_symptoms_commenced": "20/03/2024",
+    "date_first_consulted": "11/04/2024",
+    "accident_related": "No",
+    "doctor_name": "Dr Helen Broderick",
+    "doctor_specialty": "Psychiatrist"
+  }
+}
