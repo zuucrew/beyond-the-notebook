@@ -189,5 +189,6 @@ teach nothing new.
 
 ## Documents
 
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how it is built: components, contracts, sequences, failure analysis
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — the record, starting with the prediction
 - [`docs/LIMITS.md`](docs/LIMITS.md) — what this does not do and where it breaks
