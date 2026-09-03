@@ -20,7 +20,7 @@ with architecture and schema diagrams.
 
 | Project | What it is | Teaches | Level | Status |
 |---|---|---|---|---|
-| **[01-claim-loop](01-claim-loop/)** | Claims get OCR'd, low-confidence fields go to a human reviewer, corrections are kept as signal | queues · task claiming · leases · append-only audit | L2 + deployed | 🔨 building |
+| **[01-claim-loop](01-claim-loop/)** | Claims get OCR'd, low-confidence fields go to a human reviewer, corrections are kept as signal | queues · task claiming · leases · append-only audit | L2 + deployed | ✅ done |
 
 <!-- Template for the next row — keep it to one line per cell:
 | **[NN-name](NN-name/)** | one sentence, what it actually does | 3-4 concepts, dot-separated | L? | ⬜ planned / 🔨 building / ✅ done |
@@ -40,7 +40,7 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| HTTP APIs, status codes, idempotency | 🔨 01-claim-loop |
+| HTTP APIs, status codes, idempotency | ✅ 01-claim-loop |
 | Streaming — SSE, WebSockets | ⬜ |
 | Auth — API keys, JWT, OAuth | ⬜ |
 
@@ -56,16 +56,16 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Async queues, producer/consumer | 🔨 01-claim-loop |
-| At-least-once vs exactly-once delivery | 🔨 01-claim-loop |
+| Async queues, producer/consumer | ✅ 01-claim-loop |
+| At-least-once vs exactly-once delivery | ✅ 01-claim-loop |
 
 **Data**
 
 | Concept | Covered by |
 |---|---|
-| Storage choice — SQL vs KV vs object vs vector | 🔨 01-claim-loop |
-| Schema design, indexes, query plans | 🔨 01-claim-loop |
-| Migrations, transactions, connection pooling | 🔨 01-claim-loop |
+| Storage choice — SQL vs KV vs object vs vector | ✅ 01-claim-loop |
+| Schema design, indexes, query plans | ✅ 01-claim-loop |
+| Migrations, transactions, connection pooling | ✅ 01-claim-loop |
 | N+1 queries and how to spot them | ⬜ |
 | Caching, TTLs, invalidation | ⬜ |
 
@@ -73,7 +73,7 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Containers, layers, multi-stage builds | 🔨 01-claim-loop |
+| Containers, layers, multi-stage builds | ✅ 01-claim-loop |
 | CI — automated tests on push | ⬜ |
 | CD — automated deploy on merge | ⬜ |
 | Kubernetes — Deployments, Services, probes | ⬜ |
@@ -83,9 +83,9 @@ projects teaching the same three things.
 
 | Concept | Covered by |
 |---|---|
-| Observability — logs, metrics, traces | 🔨 01-claim-loop |
+| Observability — logs, metrics, traces | ✅ 01-claim-loop |
 | Secrets and security boundaries | ⬜ |
-| Cost modelling | 🔨 01-claim-loop |
+| Cost modelling | ✅ 01-claim-loop |
 
 ✅ done · 🔨 building · ⬜ not covered yet
 
