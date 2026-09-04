@@ -54,5 +54,5 @@ throughput figure.
 
 ## Where it breaks first
 
-*(Fill this in as it happens. Predictions live in D-000 — this section is for
+*(Fill this in as it happens. Predictions live in D-000. This section is for
 what actually broke.)*

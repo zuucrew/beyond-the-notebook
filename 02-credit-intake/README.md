@@ -1,6 +1,6 @@
 # credit-intake
 
-A credit application arrives as a bundle — application form, three months of
+A credit application arrives as a bundle: application form, three months of
 bank statements, payslips, ID. Forty-odd pages. The pages are independent, so
 they are extracted in parallel, joined back into one record, and anything the
 machine is unsure about still goes to a human.
@@ -15,7 +15,7 @@ The extraction is deliberately boring, again. **The fan-out is the project.**
 argument still holds and this project does not undo it.
 
 What changed is the machine side. One claim was one document was one unit of
-work — Postgres-as-queue handled it perfectly. One credit bundle is forty
+work, and Postgres-as-queue handled it perfectly. One credit bundle is forty
 independent pages that should be extracted at the same time and then joined.
 Expressing *that* in SQL means hand-rolling a fan-out/join protocol: a parent
 row, a child table, a completion counter, and a race on the last page to
@@ -32,7 +32,7 @@ two different kinds of work is the deliverable. The code is the excuse.
 
 ## What it teaches
 
-- Task queues with a real broker — producer, broker, worker, result backend
+- Task queues with a real broker: producer, broker, worker, result backend
 - Fan-out and join (`group` / `chord`) and what a partial failure does to both
 - At-least-once delivery without a database row to lean on (`acks_late`)
 - Idempotency, once redelivery is possible
@@ -183,12 +183,12 @@ possible.
 
 ## Depth
 
-**L2** — containerised, runs locally with Docker Compose. No cloud, no
+**L2**. Containerised, runs locally with Docker Compose. No cloud, no
 Kubernetes, no CI/CD. Project 1 covered deployment; repeating it here would
 teach nothing new.
 
 ## Documents
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how it is built: components, contracts, sequences, failure analysis
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — the record, starting with the prediction
-- [`docs/LIMITS.md`](docs/LIMITS.md) — what this does not do and where it breaks
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): how it is built, with components, contracts, sequences and failure analysis
+- [`docs/DECISIONS.md`](docs/DECISIONS.md): the record, starting with the prediction
+- [`docs/LIMITS.md`](docs/LIMITS.md): what this does not do and where it breaks
