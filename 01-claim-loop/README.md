@@ -27,7 +27,7 @@ data it changes.
 - Task claiming without double-assignment (`FOR UPDATE SKIP LOCKED`)
 - Leases, abandoned work, and at-least-once delivery with a human consumer
 - Storing variable-shaped documents without schema migrations (`JSONB`)
-- Append-only audit design — why corrections are events, not updates
+- Append-only audit design: why corrections are events, not updates
 - Confidence routing and the cost model behind the threshold
 - LLM observability, and closing the loop by attaching human verdicts to traces
 
@@ -37,7 +37,7 @@ data it changes.
 
 **There is no message broker.** The database is the queue. A claim's queue
 entry and its data are the same row, so completing a review is one transaction
-against one store — nothing to keep in sync, nothing to half-fail.
+against one store, with nothing to keep in sync and nothing to half-fail.
 
 ```mermaid
 flowchart LR
@@ -49,7 +49,7 @@ flowchart LR
 ```
 
 Four processes, one store. The extraction worker and the reviewer never talk to
-each other — they only ever meet through a row.
+each other; they only ever meet through a row.
 
 ## How a claim flows
 
@@ -58,7 +58,7 @@ flowchart TD
     A[claim submitted] --> B[extract fields<br/>+ confidence]
     B --> C{all fields<br/>confident?}
     C -->|yes| D([auto-approved])
-    C -->|mandatory field<br/>blank on the form| E([incomplete —<br/>go back to claimant])
+    C -->|mandatory field<br/>blank on the form| E([incomplete:<br/>go back to claimant])
     C -->|no| F[pending_review]
     F --> G[reviewer claims<br/>next task]
     G --> H{lease expires<br/>before submit?}
@@ -68,7 +68,7 @@ flowchart TD
 ```
 
 The `incomplete` branch is the one people miss. A field that is **genuinely
-blank on the form** is not an extraction problem — a reviewer cannot fix it by
+blank on the form** is not an extraction problem; a reviewer cannot fix it by
 looking harder. That claim needs to go back to the claimant, which is a
 different outcome from "the model misread it."
 
@@ -85,7 +85,7 @@ stateDiagram-v2
     extracting --> auto_approved: every field above threshold
     extracting --> pending_review: any field below threshold
     extracting --> incomplete: mandatory field blank on form
-    extracting --> submitted: lease expired — worker crashed
+    extracting --> submitted: lease expired, worker crashed
     extracting --> extraction_failed: attempts exhausted
 
     pending_review --> in_review: reviewer claims it
@@ -106,7 +106,7 @@ that acts on it. `submitted` → the worker. `pending_review` → the reviewer.
 `extracting` and `in_review` → the reaper, via lease expiry. Nothing strands.
 
 That invariant is why there is **no `extracted` state**. Extraction and routing
-happen in the same transaction — routing is a pure function of the extraction
+happen in the same transaction, since routing is a pure function of the extraction
 result, so persisting a claim between the two would create a state nothing
 queries, and claims would fall into it and die silently.
 
@@ -184,7 +184,7 @@ WHERE (extracted -> 'date_of_disability' ->> 'confidence')::float < 0.8;
 
 **`field_events` is append-only and never updated.** The model's answer and the
 human's correction are both rows. Overwriting `extracted` in place would destroy
-the single most valuable signal the system produces — how often, and where, the
+the single most valuable signal the system produces: how often, and where, the
 model is wrong.
 
 ### Indexes
@@ -194,9 +194,9 @@ model is wrong.
 | `claims (created_at) WHERE status = 'pending_review'` | Partial. Stops the claiming query becoming a sequential scan as terminal claims accumulate |
 | `claims (lease_expires_at) WHERE status = 'in_review'` | The reaper's scan |
 | `field_events (claim_id)` | Loading one claim's history |
-| `claims (storage_uri)` unique | Idempotent submit — same file, one claim |
+| `claims (storage_uri)` unique | Idempotent submit: same file, one claim |
 
-`locked_by` holds whoever currently owns the lease — a worker id during
+`locked_by` holds whoever currently owns the lease: a worker id during
 `extracting`, a reviewer id during `in_review`. Who *completed* a review is
 recorded in `field_events.actor`, which is permanent; `locked_by` is transient.
 | GIN on `claims (extracted)` | Only when a real containment query needs it |
@@ -222,8 +222,8 @@ ask for, and there are no signed URLs for a reviewer to view the document.
 > **Databases store references to blobs, not blobs.**
 
 **Objects are named by content hash.** Uploading the same file twice produces the
-same object, so dedup and upload-retry are free — and a unique index on
-`storage_uri` turns that into idempotent submit — the same file twice is one claim.
+same object, so dedup and upload-retry are free, and a unique index on
+`storage_uri` turns that into idempotent submit: the same file twice is one claim.
 
 **Order matters, because there is no transaction across two systems.** Uploading
 to object storage and inserting the claim row cannot be atomic:
@@ -239,8 +239,8 @@ swept later; a row pointing at nothing is a broken claim.
 
 **The one hole this leaves:** if the process dies between upload and insert *and*
 the client never retries, there is an object with no claim and nothing in the
-system knows a submission was attempted. A periodic reconciliation sweep —
-objects with no matching row — is the only way to close it. See `docs/LIMITS.md`.
+system knows a submission was attempted. A periodic reconciliation sweep,
+looking for objects with no matching row, is the only way to close it. See `docs/LIMITS.md`.
 
 ---
 
@@ -248,7 +248,7 @@ objects with no matching row — is the only way to close it. See `docs/LIMITS.m
 
 This is where correctness lives.
 
-**Claiming a task — one transaction.**
+**Claiming a task: one transaction.**
 
 ```sql
 BEGIN;
@@ -268,16 +268,16 @@ COMMIT;
 
 The row lock lives for the life of the **transaction**, not the statement. Split
 this into a select, a commit, and a separate update and two reviewers will get
-the same claim — the code looks almost identical and is wrong.
+the same claim; the code looks almost identical and is wrong.
 
 `SKIP LOCKED` is what makes reviewer B get a *different* row instead of blocking
 until reviewer A finishes.
 
-**Completing a review — one transaction.** Insert the correction events, update
+**Completing a review: one transaction.** Insert the correction events, update
 `extracted`, set the terminal status, clear the lease. One store, so it is
 atomic by construction. This is the entire argument for not using a broker.
 
-**Reaping expired leases — one statement.** Rows where `status = 'in_review'`
+**Reaping expired leases: one statement.** Rows where `status = 'in_review'`
 and `lease_expires_at < now()` go back to `pending_review`.
 
 ### See it for yourself
@@ -311,12 +311,12 @@ block `VACUUM` from reclaiming dead tuples, and turn a healthy queue into bloat.
 This is the most common way database-as-queue goes wrong.
 
 **Waiting for work.** Polling (`sleep(1)`, ask again) is simple and correct.
-`LISTEN` / `NOTIFY` gives near-zero latency with no empty queries — but `NOTIFY`
+`LISTEN` / `NOTIFY` gives near-zero latency with no empty queries, but `NOTIFY`
 is *not durable*, so a worker that is down when it fires misses that wakeup
 forever. Keep a slow poll as a backstop regardless.
 
 **Scaling.** Start more processes. No partition assignment, no consumer-group
-rebalancing, no coordinator — `SKIP LOCKED` means five workers hitting the same
+rebalancing, no coordinator; `SKIP LOCKED` means five workers hitting the same
 query get five different rows.
 
 ---
@@ -329,7 +329,7 @@ query get five different rows.
 SELECT status, count(*) FROM claims GROUP BY status;
 ```
 
-**What is stuck?** This is the safety net — anything non-terminal that has not
+**What is stuck?** This is the safety net: anything non-terminal that has not
 moved in an hour:
 
 ```sql
@@ -341,7 +341,7 @@ WHERE status NOT IN ('approved','rejected','incomplete','extraction_failed','aut
 `submitted` piling up means no workers are running. `extracting` piling up means
 the reaper is not running. The states name the broken component.
 
-**The metric that matters** is not queue depth — it is the age of the oldest
+**The metric that matters** is not queue depth; it is the age of the oldest
 unprocessed item. Depth can look healthy while one claim sits at the head forever.
 
 ```sql
@@ -357,12 +357,12 @@ FROM claims WHERE status = 'submitted' GROUP BY status;
 |---|---|
 | Runtime | Python 3.12+, `uv` |
 | Database | **Cloud SQL for PostgreSQL 18**, reached through the Cloud SQL Auth Proxy. A throwaway local Postgres is available behind a compose profile |
-| Driver | `psycopg[binary,pool]` — psycopg 3, raw SQL, no ORM |
+| Driver | `psycopg[binary,pool]`: psycopg 3, raw SQL, no ORM |
 | Migrations | numbered `.sql` in `migrations/`, applied by a runner in `src/` |
 | Queue | the `claims` table |
 | CLI | `typer` + `rich` |
 | Tests | `pytest` + `testcontainers[postgres]` |
-| Extraction (inc. 5) | `openai` SDK against OpenRouter — OpenAI-compatible, Qwen VL |
+| Extraction (inc. 5) | `openai` SDK against OpenRouter: OpenAI-compatible, Qwen VL |
 | Tracing (inc. 6) | `langfuse`, Cloud free tier |
 | Deploy (inc. 10) | Cloud Run + Cloud SQL + GCS + Secret Manager |
 
@@ -373,7 +373,7 @@ Each is excluded for a reason recorded in `docs/DECISIONS.md`, not by oversight.
 
 ## Running it
 
-Every command lives in **[docs/RUN.md](docs/RUN.md)** — local, the experiments,
+Every command lives in **[docs/RUN.md](docs/RUN.md)**: local, the experiments,
 and the full GCP deploy and teardown.
 
 The short version:
@@ -404,15 +404,15 @@ Two files, deliberately separated:
 
 | | Holds | Committed? |
 |---|---|---|
-| **`config.yml`** | Parameters — thresholds, model, pool sizes, timeouts | **yes** |
-| **`.env`** | Secrets — `DATABASE_URL`, `LLM_API_KEY` | **never** |
+| **`config.yml`** | Parameters: thresholds, model, pool sizes, timeouts | **yes** |
+| **`.env`** | Secrets: `DATABASE_URL`, `LLM_API_KEY` | **never** |
 
 A tuning change belongs in `config.yml`, where it shows up in a diff and can be
 argued with in review. An environment variable that nobody can trace the origin
 of is not configuration, it is folklore.
 
 `config.yml` has a `default` section plus named profiles merged over it when
-`APP_ENV` is set — so `pool_max` can differ between a laptop and Cloud Run
+`APP_ENV` is set, so `pool_max` can differ between a laptop and Cloud Run
 without becoming an environment variable:
 
 ```yaml
@@ -438,10 +438,10 @@ production:
 
 The worker becomes a scheduled drain: start, process until the queue is empty,
 exit. The same loop as local, with `break` instead of `sleep` when there is no
-work. **Overlapping runs are safe** — `SKIP LOCKED` means a second run takes
+work. **Overlapping runs are safe**, because `SKIP LOCKED` means a second run takes
 different claims, exactly as a second worker would.
 
-**The failure that will actually bite you — connection exhaustion.**
+**The failure that will actually bite you: connection exhaustion.**
 
 ```
 instances x pool_size  >  max_connections   ->  everything breaks
@@ -449,7 +449,7 @@ instances x pool_size  >  max_connections   ->  everything breaks
 
 Cloud Run scales to N instances, each holding a pool. Cloud SQL has a hard
 `max_connections` tied to instance size. 20 instances x 10 connections = 200,
-against a small instance's ~100. **The app dies from success** — traffic goes up
+against a small instance's ~100. **The app dies from success**: traffic goes up
 and it falls over.
 
 Fixes, in order of preference: cap `--max-instances` so the arithmetic cannot
@@ -458,7 +458,7 @@ a pooler (PgBouncer, or Cloud SQL's built-in) in front.
 
 This is nearly impossible to feel locally, where you only ever run one process.
 
-**Database:** Cloud SQL for PostgreSQL 18 — the same version as
+**Database:** Cloud SQL for PostgreSQL 18, the same version as
 `docker-compose.yml`, so nothing in `migrations/` or `src/` changes. Only
 `DATABASE_URL` does, and through the Cloud SQL connector it is a unix socket
 rather than a host and port:
@@ -470,7 +470,7 @@ postgresql://claim:PASSWORD@/claimloop?host=/cloudsql/PROJECT:REGION:INSTANCE
 It comes from Secret Manager, never from a file. Commands in `docs/RUN.md`.
 
 **Cost shape:** compute scales to zero and rounds to nothing at this volume.
-**Cloud SQL runs and bills 24/7 whether or not a claim arrives** — it is the only
+**Cloud SQL runs and bills 24/7 whether or not a claim arrives**: it is the only
 meter always running, which is why the deployment is scoped as a one-week run
 and then deleted. About $4 all in; see `docs/ESTIMATE.md`.
 
@@ -487,24 +487,24 @@ so the commit history reads as a list of lessons. Commits are never squashed.
 
 | Step | Adds | The one concept |
 |---|---|---|
-| 0 | `docs/DECISIONS.md` filled in before any code | — |
+| 0 | `docs/DECISIONS.md` filled in before any code | none |
 | 1 | Schema + state machine, single reviewer, happy path | schema design, transactions |
-| 2 | Confidence routing — auto-approve vs escalate | the cost model behind the threshold |
+| 2 | Confidence routing: auto-approve vs escalate | the cost model behind the threshold |
 | 3 | **Concurrent claiming with `SKIP LOCKED`, two workers racing** | row locking ← the real lesson |
 | 4 | Lease expiry + reaper | at-least-once, crash recovery |
-| 5 | Real extraction — Qwen VL via OpenRouter, replacing the stub | LLM integration behind a stable seam |
+| 5 | Real extraction: Qwen VL via OpenRouter, replacing the stub | LLM integration behind a stable seam |
 | 6 | Langfuse trace on extraction, human verdict as a score | closing the feedback loop |
 | 7 | Queue depth, agreement rate, review latency | operational observability |
-| 8 | Dockerfile + compose | **L2** — containers, layers, multi-stage |
-|   | *(built early — it surfaced a real bug: absolute host paths in `storage_uri` do not exist inside a container)* | |
-| 9 | Idempotent submit — same file twice is one claim | idempotency |
-| 10 | Deploy — Service + Jobs, GCS, Cloud SQL | connection pooling, cost modelling |
+| 8 | Dockerfile + compose | **L2**: containers, layers, multi-stage |
+|   | *(built early, and it surfaced a real bug: absolute host paths in `storage_uri` do not exist inside a container)* | |
+| 9 | Idempotent submit: same file twice is one claim | idempotency |
+| 10 | Deploy: Service + Jobs, GCS, Cloud SQL | connection pooling, cost modelling |
 
 ### The v0.1 stub
 
 Steps 1–4 do **not** read a PDF. The stub reads the ground-truth JSON in
-`dataset/`, applies controlled corruption — drop a field, mangle a value,
-assign a confidence — and emits that.
+`dataset/`, applies controlled corruption (drop a field, mangle a value,
+assign a confidence) and emits that.
 
 Deterministic, free, instant, and because the correct answer is known you can
 actually measure whether routing sent the right things to a human. The 18 PDFs
@@ -518,12 +518,12 @@ while building the queue, that's drift.
 ```
 01-claim-loop/
 ├── README.md          this file
-├── config.yml         parameters — committed
-├── .env               secrets — gitignored
+├── config.yml         parameters, committed
+├── .env               secrets, gitignored
 ├── docs/
 │   ├── DECISIONS.md   considered, chosen, why, and what changed my mind
 │   ├── LIMITS.md      what breaks at scale, and what I'd do about it
-│   ├── ESTIMATE.md    what it costs to build — money and evenings
+│   ├── ESTIMATE.md    what it costs to build, money and evenings
 │   ├── RUN.md         every command: local, experiments, GCP
 │   └── GCP_ONBOARDING.md   standing up the database from a fresh account
 ├── dataset/           18 synthetic claim PDFs + ground-truth JSON
@@ -546,7 +546,7 @@ while building the queue, that's drift.
 ```
 
 **Dependencies point inward only:** `infrastructure -> application -> domain`.
-`domain/` has no database, no network, no framework — so the routing rules are
+`domain/` has no database, no network, no framework, so the routing rules are
 testable with a plain function call. Folders exist only where there is something
 to put in them; the template this follows has `memory/`, `prompts/`,
 `mcp_clients/` and more, and this project needs none of them yet.
@@ -555,10 +555,10 @@ to put in them; the template this follows has `memory/`, `prompts/`,
 
 Recorded in `docs/DECISIONS.md`, and worth settling as you build rather than up front:
 
-- **D-003** — when a lease expires mid-edit and two reviewers submit corrections
+- **D-003**: when a lease expires mid-edit and two reviewers submit corrections
   for the same claim, who wins?
-- **D-007** — where the confidence threshold sits, and the arithmetic behind it
-- **D-008** — structured output and citations are mutually exclusive, so how
+- **D-007**: where the confidence threshold sits, and the arithmetic behind it
+- **D-008**: structured output and citations are mutually exclusive, so how
   does a reviewer see *where* on the page a value came from?
-- **D-012** — how a document's form type is identified, and what happens to an
+- **D-012**: how a document's form type is identified, and what happens to an
   unrecognised one

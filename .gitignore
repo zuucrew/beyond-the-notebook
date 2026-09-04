@@ -8,6 +8,6 @@ docs/ROADMAP.md
 *.docx
 
 # Article briefing notes. Internal working material for whoever writes the
-# public post — never committed, in any project.
+# public post, never committed, in any project.
 article.md
 **/article.md

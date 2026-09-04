@@ -45,7 +45,7 @@ export default function Upload({ onChanged }: { onChanged: () => void }) {
       </div>
 
       <p className="muted note">
-        Uploading only queues the claim — it returns immediately. Extraction
+        Uploading only queues the claim; it returns immediately. Extraction
         happens in a separate worker, so nothing here waits on a model call.
         Upload the same file twice and you get one claim: documents are named by
         content hash, so a repeat is the same object.

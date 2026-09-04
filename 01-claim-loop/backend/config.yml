@@ -1,6 +1,6 @@
 # Parameters. Committed, reviewable, diffable.
 #
-# Secrets are NOT here and never should be — they live in .env, which is
+# Secrets are NOT here and never should be. They live in .env, which is
 # gitignored. The split is: anything that would be embarrassing in a public
 # repository goes in the environment; everything else goes here, where a change
 # shows up in a diff and can be argued with in review.
@@ -11,12 +11,12 @@
 
 default:
   routing:
-    # Below this, a field goes to a human. A number to argue with, not defend —
+    # Below this, a field goes to a human. A number to argue with, not defend:
     # it should come from measured accuracy, not from looking round.
     confidence_threshold: 0.80
 
     # Escalated regardless of confidence. These are DD/MM/YYYY on the source
-    # forms, so a model reading 03/04/2025 as March 4th is *confidently* wrong —
+    # forms, so a model reading 03/04/2025 as March 4th is *confidently* wrong,
     # a failure mode the threshold cannot catch.
     #
     # Note what this list does: with date_of_birth present on every form, every
@@ -31,7 +31,7 @@ default:
   queue:
     # How long a worker or reviewer may hold a claim before it is handed to
     # someone else. Too short robs a reviewer mid-form; too long leaves
-    # abandoned work sitting. 15 minutes is a guess — measure it.
+    # abandoned work sitting. 15 minutes is a guess, so measure it.
     lease_seconds: 900
 
     # Attempts before a claim goes to extraction_failed. This is what stops a
@@ -47,7 +47,7 @@ default:
   extraction:
     # "api" reads the PDF for real through any OpenAI-compatible endpoint.
     # "stub" reads the ground-truth JSON beside it and corrupts it
-    # deterministically — free, offline, repeatable.
+    # deterministically: free, offline, repeatable.
     provider: api
 
     # OpenRouter. Groq, Together, vLLM and OpenAI all work here unchanged;

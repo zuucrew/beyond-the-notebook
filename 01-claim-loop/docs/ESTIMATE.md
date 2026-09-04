@@ -1,6 +1,6 @@
 # Estimate
 
-What this project costs to build and practise on — money and evenings.
+What this project costs to build and practise on, in money and evenings.
 
 Short version: **under $10 in cash, and about 9 evenings.** The cash is trivial
 because the deployment is torn down after about a week. The evenings are the
@@ -15,7 +15,7 @@ real budget.
 **$0.** Postgres runs in Docker on the laptop. The extractor is a stub that reads
 the ground-truth JSON in `dataset/`. No API calls, no cloud, nothing metered.
 
-This is most of the learning — schema, state machine, `SKIP LOCKED`, leases — and
+This is most of the learning (schema, state machine, `SKIP LOCKED`, leases) and
 it costs nothing at all.
 
 ### Adding a real extraction model
@@ -26,7 +26,7 @@ costs cents, and development means running it dozens of times, not thousands.
 
 **Budget $5.** It will almost certainly come in under that.
 
-Verify current rates before relying on this — provider pricing moves, and these
+Verify current rates before relying on this, because provider pricing moves and these
 are estimates rather than quotes.
 
 ### Tracing, metrics and containers
@@ -42,16 +42,16 @@ budgeted as a **7-day run, then deleted.**
 
 | Service | 7 days | Note |
 |---|---|---|
-| **Cloud SQL** — smallest shared-core, HA off | **~$2.50–3.50** | The only meter that runs continuously |
-| Cloud SQL storage — 10 GB SSD minimum | ~$0.40 | |
-| Cloud Run — Service + Jobs | ~$0 | Scales to zero; free tier covers 2M requests |
+| **Cloud SQL**: smallest shared-core, HA off | **~$2.50–3.50** | The only meter that runs continuously |
+| Cloud SQL storage: 10 GB SSD minimum | ~$0.40 | |
+| Cloud Run: Service + Jobs | ~$0 | Scales to zero; free tier covers 2M requests |
 | Cloud Storage | ~$0 | 18 PDFs is ~5 MB against a 5 GB free tier |
 | Artifact Registry | ~$0 | 0.5 GB free |
 | Cloud Build | ~$0 | 120 build-minutes/day free |
 | Secret Manager | ~$0 | Free tier covers a handful of secrets |
 | **Total** | **~$3–4** | |
 
-Turn HA on and it roughly doubles. It teaches nothing here — leave it off.
+Turn HA on and it roughly doubles. It teaches nothing here, so leave it off.
 
 ### All in
 
@@ -84,7 +84,7 @@ If you want to pause rather than delete between sessions:
 gcloud sql instances patch claim-loop-db --activation-policy NEVER
 ```
 
-You still pay for storage — about $0.50 a week — and nothing else.
+You still pay for storage, about $0.50 a week, and nothing else.
 
 Set a budget alert at $50 anyway. It takes two minutes and it catches the thing
 you did not think of.
@@ -104,16 +104,16 @@ The scarcer budget, and the one worth planning.
 
 | Step | Evenings | What happens |
 |---|---|---|
-| 0 — decisions | 1 | Fill in `DECISIONS.md`. The state machine and D-003 settle the schema |
-| 1–2 — schema, routing | 2 | Migration, two tables, submit, stub extractor, confidence threshold |
-| **3–4 — locking, leases** | **2** | **The core of the project.** Two workers racing, then crash recovery |
-| 5–7 — real model, tracing | 2–3 | Groq, Langfuse, queue metrics |
-| 8 — containerise | 1 | Dockerfile, compose. **L2** |
-| 9–10 — idempotency, deploy | 1–2 | Unique index; then Cloud Run + Cloud SQL |
+| 0: decisions | 1 | Fill in `DECISIONS.md`. The state machine and D-003 settle the schema |
+| 1–2: schema, routing | 2 | Migration, two tables, submit, stub extractor, confidence threshold |
+| **3–4: locking, leases** | **2** | **The core of the project.** Two workers racing, then crash recovery |
+| 5–7: real model, tracing | 2–3 | Groq, Langfuse, queue metrics |
+| 8: containerise | 1 | Dockerfile, compose. **L2** |
+| 9–10: idempotency, deploy | 1–2 | Unique index; then Cloud Run + Cloud SQL |
 | **Total** | **~9** | |
 
 The locking and lease steps are the ones to slow down on. Everything before is setup
-and everything after is extension — the locking and lease work is the reason the
+and everything after is extension. The locking and lease work is the reason the
 project exists.
 
 ### The cheapest hour in the whole project
@@ -128,11 +128,11 @@ Five minutes, zero cost, and it changes what you write afterwards.
 
 ## What would change these numbers
 
-- **Real OCR instead of the stub in v0.1** — several evenings, no new system design
-- **Long PDFs at hundreds of pages** — token cost per document rises sharply; see
+- **Real OCR instead of the stub in v0.1**: several evenings, no new system design
+- **Long PDFs at hundreds of pages**: token cost per document rises sharply; see
   `LIMITS.md`
-- **A layout model** — a second deployable, GPU or CPU workers, and a crossover
+- **A layout model**: a second deployable, GPU or CPU workers, and a crossover
   around ~1M pages/year before it pays for itself. Tracked in `IDEAS.md` as a
   separate project
-- **Leaving it deployed** — the only recurring cost, and it is the database.
+- **Leaving it deployed**: the only recurring cost, and it is the database.
   At roughly $0.50 a day it is not dangerous; it is just untidy.

@@ -2,10 +2,10 @@
 
 Two sources, deliberately separated:
 
-  config.yml   parameters — thresholds, model names, pool sizes, timeouts.
+  config.yml   parameters: thresholds, model names, pool sizes, timeouts.
                Committed, so a change appears in a diff and can be reviewed.
 
-  .env         secrets — API keys and connection strings. Gitignored, never
+  .env         secrets: API keys and connection strings. Gitignored, never
                in an image layer, never in a diff.
 
 Mixing them means either secrets end up in version control, or every tuning
@@ -67,14 +67,14 @@ _load_dotenv()
 _cfg = _load_yaml()
 
 # ---------------------------------------------------------------------------
-# secrets — environment only
+# secrets: environment only
 # ---------------------------------------------------------------------------
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///claimloop")
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 
 # ---------------------------------------------------------------------------
-# parameters — config.yml only
+# parameters: config.yml only
 # ---------------------------------------------------------------------------
 
 CONFIDENCE_THRESHOLD: float = float(_cfg["routing"]["confidence_threshold"])
