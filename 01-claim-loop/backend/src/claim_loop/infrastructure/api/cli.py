@@ -36,7 +36,7 @@ def migrate_up():
     """Apply pending migrations."""
     applied = migrate.migrate_up()
     if not applied:
-        console.print("[dim]nothing to apply — schema is current[/dim]")
+        console.print("[dim]nothing to apply, schema is current[/dim]")
         return
     for version in applied:
         console.print(f"[green]applied[/green] {version}")
@@ -79,9 +79,9 @@ def work(
     once: bool = typer.Option(False, "--once", help="Drain and exit, instead of waiting."),
     worker_id: str = typer.Option(None, help="Defaults to host-pid."),
 ):
-    """Run the extraction worker. Start several at once — they will not collide."""
+    """Run the extraction worker. Start several at once, they will not collide."""
     wid = worker_id or _default_actor("worker")
-    console.print(f"[bold]{wid}[/bold] — {'draining' if once else 'waiting for work'}\n")
+    console.print(f"[bold]{wid}[/bold]: {'draining' if once else 'waiting for work'}\n")
     colours = {
         "auto_approved": "green",
         "pending_review": "yellow",
@@ -159,7 +159,7 @@ def review(reviewer: str = typer.Option(None, help="Defaults to host-pid.")):
     repo.complete_review(claim["id"], extracted, events, rid, status)
 
     corrected = sum(1 for e in events if e["event_type"] == "corrected")
-    console.print(f"\n[green]{status}[/green] — {corrected} corrected, {len(events)} reviewed")
+    console.print(f"\n[green]{status}[/green]: {corrected} corrected, {len(events)} reviewed")
 
 
 @app.command()
@@ -199,7 +199,7 @@ def status(stuck_after: str = typer.Option("1 hour", help="Age at which a claim 
 
 @app.command()
 def history(claim_id: str):
-    """Every recorded event for one claim — the model's answer and the human's."""
+    """Every recorded event for one claim: the model's answer and the human's."""
     events = repo.field_history(claim_id)
     if not events:
         console.print("[dim]no events[/dim]")

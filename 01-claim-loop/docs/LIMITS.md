@@ -1,18 +1,18 @@
 # Limits
 
 What breaks, when, and what I'd do about it. Written as I go, not at the end.
-Answers only count if they name a number or a mechanism — "it would get slow"
+Answers only count if they name a number or a mechanism. "It would get slow"
 is not an answer.
 
 ## Scale questions to answer
 
 **Throughput.** 10 claims/day is trivial. At what rate does this system stop
-working, and which component gives first — the extractor, the database, or the
+working, and which component gives first: the extractor, the database, or the
 humans? Humans are a fixed-capacity resource: N reviewers × M claims/hour is a
 hard ceiling that no amount of scaling the app changes.
 
 **Queue depth.** If arrivals exceed review capacity, the queue grows without
-bound. What is the intended behaviour — reject, degrade, auto-approve more
+bound. What is the intended behaviour: reject, degrade, auto-approve more
 aggressively, page someone? Doing nothing is also a choice, just an unstated one.
 
 **The claiming query.** `SKIP LOCKED` scans for the first unlocked eligible
@@ -21,7 +21,7 @@ actually do? What index makes it stop being a sequential scan?
 
 **Connection limits.** Each app instance holds a pool. Managed Postgres has a
 hard `max_connections` tied to instance size. instances × pool_size vs that
-number — write out the arithmetic and find the crossover point. This is the
+number. Write out the arithmetic and find the crossover point. This is the
 failure mode that shows up on deploy day, not in local development.
 
 **Lease expiry.** Too short and you steal work from a reviewer mid-typing. Too
@@ -50,7 +50,7 @@ retried. What stops it from being retried forever?
 
 **Extraction goes through OpenRouter**, which is a company that can be down,
 rate-limit me, deprecate a model ID, or change pricing. What happens to a claim
-that is mid-extraction when that occurs — does it retry, park in a state, or
+that is mid-extraction when that occurs: does it retry, park in a state, or
 fail loudly? And what is the blast radius: does the *review* half of the system
 keep working while extraction is down, or does everything stop?
 
@@ -62,5 +62,5 @@ reviewers keep working through an outage. Is that what actually happens?
 
 Per 1,000 claims: extraction cost, database cost, human review minutes. Which
 term dominates, and by how much? If the answer is "human time by two orders of
-magnitude" — and it will be — then every engineering optimisation that doesn't
+magnitude", and it will be, then every engineering optimisation that doesn't
 reduce escalation rate is theatre.
