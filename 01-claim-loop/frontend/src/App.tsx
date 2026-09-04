@@ -106,7 +106,7 @@ export default function App() {
           </button>
           <p className="muted note">
             Taking a claim puts a lease on it. Nobody else can review it until
-            you finish or the lease expires — open this in two tabs and you will
+            you finish or the lease expires. Open this in two tabs and you will
             get two different claims.
           </p>
         </div>

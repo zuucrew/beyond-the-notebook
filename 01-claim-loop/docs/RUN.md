@@ -8,7 +8,7 @@ Every command for this project, in one place. Local first, GCP at the bottom.
 
 ---
 
-## Setting up Cloud SQL — entirely in the Console
+## Setting up Cloud SQL: entirely in the Console
 
 No CLI. Console labels shift between releases; the navigation paths are stable.
 
@@ -39,13 +39,13 @@ click **ENABLE API** and wait about thirty seconds.
 | Cloud SQL edition | **Enterprise** | not Enterprise Plus |
 | Preset | **Sandbox** | the cheapest configuration |
 | Region | `australia-southeast1` | Sydney. Keep everything in one region |
-| Zonal availability | **Single zone** | "Multiple zones" is HA — it doubles the bill and teaches nothing here |
+| Zonal availability | **Single zone** | "Multiple zones" is HA: it doubles the bill and teaches nothing here |
 
 Expand **SHOW CONFIGURATION OPTIONS** and check two things:
 
-- **Storage** — SSD, **10 GB**. Leave automatic storage increases on; it prevents
+- **Storage**: SSD, **10 GB**. Leave automatic storage increases on; it prevents
   an outage and costs nothing until it triggers.
-- **Connections** — **Public IP** ticked, Private IP unticked. Public IP does not
+- **Connections**: **Public IP** ticked, Private IP unticked. Public IP does not
   mean open to the internet: nothing can connect without credentials, and the
   proxy authenticates through IAM.
 
@@ -53,7 +53,7 @@ Click **CREATE INSTANCE**. It takes **five to ten minutes.**
 
 ### 4 · Copy the connection name
 
-When it finishes, you land on the instance overview. Find **Connection name** —
+When it finishes, you land on the instance overview. Find **Connection name**,
 it looks like:
 
 ```
@@ -78,19 +78,19 @@ Left menu → **Users** → **ADD USER ACCOUNT**.
 
 **ADD.**
 
-This is the account the application uses. Keep it separate from `postgres` — the
+This is the account the application uses. Keep it separate from `postgres`, because the
 app has no business holding admin rights.
 
 ### 7 · Choose how you connect
 
 Many organisations enforce `iam.disableServiceAccountKeyCreation`, so a
-downloaded key file is not an option — and that is a good policy, not an
+downloaded key file is not an option, and that is a good policy, not an
 obstacle. Leaked service account keys are one of the most common causes of cloud
 breaches. **Do not ask an admin to disable it.**
 
 Two alternatives. Both are fine for this project.
 
-#### Option A — Authorised networks. No CLI, no keys.
+#### Option A: Authorised networks. No CLI, no keys.
 
 Find your public IP: search "what is my IP", or visit `ifconfig.me`.
 
@@ -110,12 +110,12 @@ DATABASE_URL=postgresql://claim:PASSWORD@34.87.x.x:5432/claimloop
 No proxy service, no credentials file, nothing to install.
 
 The trade: your home IP changes, and you will have to come back and update it.
-The instance is reachable from that IP over the internet — still password
+The instance is reachable from that IP over the internet, still password
 protected and TLS encrypted, but reachable. Acceptable for synthetic data over a
 week; **not** what the TPD design permits, since §2.4 requires no public
 data-plane access at all.
 
-#### Option B — The Auth Proxy with your own identity. One CLI command.
+#### Option B: The Auth Proxy with your own identity. One CLI command.
 
 ```bash
 gcloud auth application-default login
@@ -123,7 +123,7 @@ gcloud auth application-default login
 
 A browser opens, you log in as yourself, and credentials are written to
 `~/.config/gcloud/application_default_credentials.json`. **No service account
-key is created**, so the org policy is satisfied — this is precisely the "more
+key is created**, so the org policy is satisfied. This is precisely the "more
 secure alternative" the error message points at.
 
 Your user needs the **Cloud SQL Client** role. If it does not have it, from the
@@ -176,7 +176,7 @@ with the password from step 6, database `claimloop`, and run:
 SELECT version();
 ```
 
-If that returns, the database, the user and the password are all correct — and
+If that returns, the database, the user and the password are all correct, and
 anything that fails next is the proxy or the app, not Cloud SQL.
 
 ### 10 · Stop it when you are not using it
@@ -189,7 +189,7 @@ instance name, which is the point.
 
 ---
 
-## Local — running against Cloud SQL
+## Local: running against Cloud SQL
 
 Start the proxy:
 
@@ -255,7 +255,7 @@ docker compose build app
 
 ---
 
-## Local — offline, throwaway Postgres
+## Local: offline, throwaway Postgres
 
 For working without a network, or for wiping the database and starting again.
 Runs on port 5433 so it cannot collide with the proxy.
@@ -276,7 +276,7 @@ docker compose --profile local down -v
 
 ---
 
-## Local — without Docker
+## Local: without Docker
 
 Postgres natively, if you would rather see the database directly.
 
@@ -296,7 +296,7 @@ createdb claimloop
 cp .env.example .env   # then fill in LLM_API_KEY
 ```
 
-Parameters — model, thresholds, pool sizes — are in `config.yml`, not `.env`.
+Parameters (model, thresholds, pool sizes) are in `config.yml`, not `.env`.
 
 ```bash
 uv sync
@@ -318,14 +318,14 @@ These are the point of the project. Run them before trusting anything.
 
 Two `psql` sessions side by side.
 
-**Session A** — do not commit:
+**Session A**: do not commit:
 
 ```sql
 BEGIN;
 SELECT id FROM claims WHERE status='pending_review' ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED;
 ```
 
-**Session B** — same query. You get a *different* row. Now drop `SKIP LOCKED`
+**Session B**: same query. You get a *different* row. Now drop `SKIP LOCKED`
 and rerun: B **blocks**. Then `ROLLBACK` in A and watch B return A's row.
 
 ### Watch workers race
@@ -348,7 +348,7 @@ Sit on the prompt for fifteen seconds, then in another terminal:
 docker compose run --rm app reap
 ```
 
-Now submit the review you were holding. It succeeds — and overwrites whoever
+Now submit the review you were holding. It succeeds, and overwrites whoever
 picked the claim up after you. That is D-003, and it is still unfixed.
 
 ### Break it deliberately
@@ -361,7 +361,7 @@ A test that cannot fail against the broken version is not testing anything.
 
 ---
 
-## GCP — one-time setup
+## GCP: one-time setup
 
 Scoped as a one-week run and then deleted; see `ESTIMATE.md`.
 
@@ -377,7 +377,7 @@ gcloud config set project $PROJECT
 gcloud services enable sqladmin.googleapis.com run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com cloudbuild.googleapis.com cloudscheduler.googleapis.com
 ```
 
-Smallest shared-core tier, HA off — deliberately, so the connection limit stays
+Smallest shared-core tier, HA off, deliberately, so the connection limit stays
 low enough to teach you something:
 
 ```bash
@@ -413,7 +413,7 @@ gcloud billing budgets create --billing-account=YOUR_BILLING_ACCOUNT --display-n
 
 ---
 
-## GCP — deploy
+## GCP: deploy
 
 Migrations run as their own job and must finish before the app deploys. Never on
 app startup: ten instances booting means ten concurrent `CREATE TABLE`s, and the
@@ -427,21 +427,21 @@ gcloud run jobs deploy claim-loop-migrate --source . --region=$REGION --args=mig
 gcloud run jobs execute claim-loop-migrate --region=$REGION --wait
 ```
 
-The worker — a Job, not a Service. A Service throttles CPU between requests, so
+The worker is a Job, not a Service. A Service throttles CPU between requests, so
 a polling loop starves:
 
 ```bash
 gcloud run jobs deploy claim-loop-worker --source . --region=$REGION --args=work,--once --set-cloudsql-instances=$PROJECT:$REGION:$INSTANCE --set-secrets=DATABASE_URL=claim-loop-db-url:latest --set-env-vars=DB_POOL_MAX=2
 ```
 
-Drain the queue every two minutes. Overlapping runs are safe — `SKIP LOCKED`
+Drain the queue every two minutes. Overlapping runs are safe, because `SKIP LOCKED`
 means a second run takes different claims:
 
 ```bash
 gcloud scheduler jobs create http claim-loop-worker-tick --location=$REGION --schedule="*/2 * * * *" --uri="https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT/jobs/claim-loop-worker:run" --http-method=POST --oauth-service-account-email=$(gcloud config get-value account)
 ```
 
-### There is no service to deploy — yet
+### There is no service to deploy: yet
 
 A Cloud Run **Service** must listen for HTTP on `$PORT`. This project's only
 entrypoint is a Typer CLI, so a Service would fail its health check and never
@@ -460,14 +460,14 @@ gcloud run deploy claim-loop-api --source . --region=$REGION --max-instances=10 
 
 ---
 
-## GCP — the same thing in the Console
+## GCP: the same thing in the Console
 
 Everything above except one step can be clicked. Console labels move between
 releases; the navigation paths are stable, the button captions less so.
 
 ### 1 · Enable the APIs
 
-**APIs & Services → Library** — search and **Enable** each of: Cloud SQL Admin,
+**APIs & Services → Library**: search and **Enable** each of: Cloud SQL Admin,
 Cloud Run Admin, Artifact Registry, Secret Manager, Cloud Build, Cloud Scheduler.
 
 ### 2 · Cloud SQL instance
@@ -479,9 +479,9 @@ Cloud Run Admin, Artifact Registry, Secret Manager, Cloud Build, Cloud Scheduler
 | Instance ID | `claim-loop-db` |
 | Database version | PostgreSQL 16 |
 | Edition | Enterprise |
-| Preset | Sandbox — the cheapest shared-core |
+| Preset | Sandbox, the cheapest shared-core |
 | Region | `australia-southeast1` |
-| Zonal availability | **Single zone** — "Multiple zones" is HA and doubles the bill |
+| Zonal availability | **Single zone**, since "Multiple zones" is HA and doubles the bill |
 | Storage | 10 GB SSD |
 | Connections | Public IP (default) |
 
@@ -490,7 +490,7 @@ Then inside the instance:
 - **Databases → Create Database** → `claimloop`
 - **Users → Add User Account** → built-in authentication → user `claim`, set a password
 
-Copy the **connection name** from the instance overview — it looks like
+Copy the **connection name** from the instance overview. It looks like
 `project:region:claim-loop-db`. You need it in the next step.
 
 ### 3 · The connection string as a secret
@@ -503,7 +503,7 @@ Name `claim-loop-db-url`, and paste as the value:
 postgresql://claim:YOUR_PASSWORD@/claimloop?host=/cloudsql/PROJECT:REGION:claim-loop-db
 ```
 
-No host and port — the Cloud SQL connector mounts a unix socket, so the host is
+No host and port, because the Cloud SQL connector mounts a unix socket, so the host is
 a filesystem path.
 
 ### 4 · Bucket
@@ -524,10 +524,10 @@ Two ways round it, both Console-friendly afterwards:
   and note what it is: continuous deployment, which is more automation than this
   project asked for.
 - **Push an image once from your machine**, then deploy it by tag from the
-  Console every time after. Needs `gcloud auth configure-docker` once — one CLI
+  Console every time after. Needs `gcloud auth configure-docker` once, one CLI
   command, then never again.
 
-### 6 · Cloud Run service — skip this for now
+### 6 · Cloud Run service: skip this for now
 
 Only relevant once the project has an HTTP entrypoint. A Service must answer on
 `$PORT`; the CLI does not. Go to Jobs.
@@ -536,11 +536,11 @@ Only relevant once the project has an HTTP entrypoint. A Service must answer on
 **Cloud Run → Create Service**, pick the image or repository from step 5, then:
 
 - **Region** `australia-southeast1`
-- **Containers → Variables & Secrets** — add `APP_ENV` = `production`; add
+- **Containers → Variables & Secrets**: add `APP_ENV` = `production`; add
   `DATABASE_URL` as a **secret reference** to `claim-loop-db-url`, latest version
-- **Containers → Connections** (sometimes *Cloud SQL connections*) — add the
+- **Containers → Connections** (sometimes *Cloud SQL connections*): add the
   instance. This is what mounts the socket
-- **Revision scaling → Maximum instances** — set it. Instances x `pool_max` must
+- **Revision scaling → Maximum instances**: set it. Instances x `pool_max` must
   stay under the database's `max_connections`
 
 ### 7 · Jobs
@@ -553,7 +553,7 @@ connection. The difference is **Arguments**:
 | `claim-loop-migrate` | `migrate-up` |
 | `claim-loop-worker` | `work`, `--once` |
 
-Run the migration job once — **Execute**, and wait for it to finish — before
+Run the migration job once (**Execute**, and wait for it to finish) before
 deploying the service.
 
 ### 8 · Schedule the worker
@@ -576,7 +576,7 @@ Cloud Run Invoker.
 - **Cloud Run → your service → Logs**
 - **Cloud Run → Jobs → executions** for worker runs
 - **SQL → instance → Cloud SQL Studio** for a query editor in the browser
-- **SQL → instance → Monitoring** — active connections is the graph to watch when
+- **SQL → instance → Monitoring**: active connections is the graph to watch when
   you push load and the pool arithmetic breaks
 
 ### 11 · Teardown
@@ -589,7 +589,7 @@ you to type the instance name to confirm, which is the point.
 
 ---
 
-## GCP — operate
+## GCP: operate
 
 A psql shell against Cloud SQL:
 
@@ -613,12 +613,12 @@ Force a run rather than waiting for the schedule:
 gcloud run jobs execute claim-loop-worker --region=$REGION --wait
 ```
 
-Prove the connection limit is real — raise `--max-instances` and push load until
+Prove the connection limit is real: raise `--max-instances` and push load until
 it breaks. That failure is the entire reason for deploying at all.
 
 ---
 
-## GCP — teardown
+## GCP: teardown
 
 Take the corrections first. They are the only data in the system that cannot be
 regenerated:
@@ -650,7 +650,7 @@ gcloud storage rm --recursive gs://$PROJECT-claim-loop-docs
 ```
 
 Pause instead of deleting, if you are coming back tomorrow. You keep paying for
-storage — about 50 cents a week — and nothing else:
+storage, about 50 cents a week, and nothing else:
 
 ```bash
 gcloud sql instances patch $INSTANCE --activation-policy NEVER
